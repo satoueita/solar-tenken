@@ -152,6 +152,16 @@
   .cell-input.measured:focus{
     outline:2px solid var(--amber);outline-offset:1px;background:#fff !important;-webkit-text-fill-color:#8a4e12;
   }
+  .cell-input.measured.judge-ok{
+    background:var(--ok-soft) !important;border-color:var(--ok);color:#1e5c3f !important;-webkit-text-fill-color:#1e5c3f;
+  }
+  .cell-input.measured.judge-ok::placeholder{color:#5ea583;}
+  .cell-input.measured.judge-ok:focus{outline-color:var(--ok);-webkit-text-fill-color:#1e5c3f;}
+  .cell-input.measured.judge-ng{
+    background:var(--ng-soft) !important;border-color:var(--ng);color:#8a2a24 !important;-webkit-text-fill-color:#8a2a24;
+  }
+  .cell-input.measured.judge-ng::placeholder{color:#c98984;}
+  .cell-input.measured.judge-ng:focus{outline-color:var(--ng);-webkit-text-fill-color:#8a2a24;}
   select.cell-input{font-family:'Noto Sans JP',sans-serif;}
   .num-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);text-align:center;width:24px;}
   .calc-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);white-space:nowrap;}
@@ -303,7 +313,8 @@
     padding:9px 14px;border-radius:20px;cursor:pointer;
   }
   .tool-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
-  .tools-body{padding:22px 22px 26px;display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .tools-body{padding:18px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .tool-pane{width:100%;flex-direction:column;align-items:center;gap:14px;}
   .tool-btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   .tool-btn-row .btn{font-size:14.5px;padding:12px 18px;}
 
@@ -330,14 +341,14 @@
 
   .calc-wrap{width:100%;}
   .calc-display{
-    font-family:'JetBrains Mono',monospace;font-size:42px;text-align:right;
-    background:var(--ink);color:#fff;padding:18px 20px;border-radius:10px;margin-bottom:14px;
-    overflow-x:auto;white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;text-align:right;
+    background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;margin-bottom:10px;
+    overflow-x:auto;white-space:nowrap;line-height:1.15;
   }
-  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
   .calc-btn{
-    font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;
-    padding:20px 0;border-radius:10px;border:1px solid var(--line-strong);
+    font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;
+    padding:15px 0;border-radius:10px;border:1px solid var(--line-strong);
     background:var(--surface-2);color:var(--ink);cursor:pointer;
   }
   .calc-btn:hover{background:#fff;}
@@ -890,6 +901,12 @@
     if (judge==='ng') return '<span class="badge badge-ng">NG</span>';
     return '<span class="badge badge-na">—</span>';
   }
+  function applyJudgeClass(inputEl, judge){
+    if (!inputEl) return;
+    inputEl.classList.remove('judge-ok','judge-ng');
+    if (judge==='ok') inputEl.classList.add('judge-ok');
+    else if (judge==='ng') inputEl.classList.add('judge-ng');
+  }
   function markDirty(){ document.getElementById('saveStatus').textContent = '未保存の変更があります'; }
   function markSaved(){
     const t = new Date();
@@ -1003,7 +1020,7 @@
             <td><input type="checkbox" class="row-select-cb" data-group="${g.id}" data-rowid="${row.id}"></td>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="name" value="${esc(row.name)}" placeholder="例：ストリング1"></td>
-            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
+            <td><input class="cell-input measured${judge==='ok'?' judge-ok':judge==='ng'?' judge-ng':''}" id="measured-${row.id}" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
             <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voc" value="${esc(row.voc)}" placeholder="例：40.0" inputmode="decimal"></td>
             <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="count" value="${esc(row.count)}" placeholder="例：20" inputmode="numeric"></td>
             <td>
@@ -1116,6 +1133,7 @@
       const {diff, judge} = calcVoltageRow(row);
       const d = document.getElementById('diff-'+rid); if (d) d.textContent = diff!==null ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—';
       const j = document.getElementById('judge-'+rid); if (j) j.innerHTML = badge(judge);
+      applyJudgeClass(document.getElementById('measured-'+rid), judge);
       updateVoltageSummary();
     }
   });
@@ -1268,10 +1286,10 @@
             <td><input type="checkbox" class="row-select-cb" data-group="${g.id}" data-rowid="${row.id}"></td>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：PCS1 直流入力"></td>
-            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal" enterkeyhint="next"></td>
+            <td><input class="cell-input measured${judgeP==='ok'?' judge-ok':judgeP==='ng'?' judge-ng':''}" id="measured-p-${row.id}" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal" enterkeyhint="next"></td>
             <td id="judge-p-${row.id}">${badge(judgeP)}</td>
             <td><button class="mini-copy" data-copypn="${row.id}" data-group="${g.id}" title="P側の値をN側にコピー">P→N<br>値をコピー</button></td>
-            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measuredN" value="${esc(row.measuredN)}" placeholder="N側" inputmode="decimal" enterkeyhint="next"></td>
+            <td><input class="cell-input measured${judgeN==='ok'?' judge-ok':judgeN==='ng'?' judge-ng':''}" id="measured-n-${row.id}" data-group="${g.id}" data-id="${row.id}" data-f="measuredN" value="${esc(row.measuredN)}" placeholder="N側" inputmode="decimal" enterkeyhint="next"></td>
             <td id="judge-n-${row.id}">${badge(judgeN)}</td>
             <td>
               <select class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voltage">
@@ -1366,6 +1384,8 @@
       const {judgeP, judgeN} = calcInsulationRow(row);
       const jp = document.getElementById('judge-p-'+rid); if (jp) jp.innerHTML = badge(judgeP);
       const jn = document.getElementById('judge-n-'+rid); if (jn) jn.innerHTML = badge(judgeN);
+      applyJudgeClass(document.getElementById('measured-p-'+rid), judgeP);
+      applyJudgeClass(document.getElementById('measured-n-'+rid), judgeN);
       updateInsulationSummary();
     }
   });
@@ -1496,7 +1516,7 @@
       tr.innerHTML = `
         <td class="num-col">${idx+1}</td>
         <td><input class="cell-input text" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：分電盤1"></td>
-        <td><input class="cell-input measured" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
+        <td><input class="cell-input measured${judge==='ok'?' judge-ok':judge==='ng'?' judge-ng':''}" id="measured-ac-${row.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
         <td id="judge-ac-${row.id}">${badge(judge)}</td>
         <td>
           <select class="cell-input" data-id="${row.id}" data-f="voltage">
@@ -1533,6 +1553,7 @@
       markDirty();
       const {judge} = calcInsulationAcRow(row);
       const j = document.getElementById('judge-ac-'+rid); if (j) j.innerHTML = badge(judge);
+      applyJudgeClass(document.getElementById('measured-ac-'+rid), judge);
       updateInsulationAcSummary();
     }
   });
@@ -1571,7 +1592,7 @@
           </select>
         </td>
         <td><input class="cell-input text" data-id="${row.id}" data-f="label" value="${esc(row.label)}" placeholder="例：PCS1 筐体"></td>
-        <td><input class="cell-input measured" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
+        <td><input class="cell-input measured${judge==='ok'?' judge-ok':judge==='ng'?' judge-ng':''}" id="measured-g-${row.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
         <td id="judge-g-${row.id}">${badge(judge)}</td>
         <td>
           <select class="cell-input" data-id="${row.id}" data-f="electrodeType">
@@ -1613,6 +1634,7 @@
       }
       const {judge} = calcGroundingRow(row);
       const j = document.getElementById('judge-g-'+rid); if (j) j.innerHTML = badge(judge);
+      applyJudgeClass(document.getElementById('measured-g-'+rid), judge);
       updateGroundingSummary();
     }
   });
@@ -1648,8 +1670,7 @@
   async function saveCurrent(){
     state.updatedAt = new Date().toISOString();
     try {
-      const result = await window.storage.set('inspection:'+state.id, JSON.stringify(state), false);
-      if (!result) throw new Error('no result');
+      localStorage.setItem('inspection:'+state.id, JSON.stringify(state));
       markSaved();
       return true;
     } catch(err){
