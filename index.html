@@ -410,7 +410,6 @@
   <div class="toolbar">
     <button class="btn btn-primary" id="btnNew">＋ 新規点検</button>
     <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を端末に書き出します。ログイン中はGoogleドライブにも保存されます">☁️ クラウドに保存</button>
-    <button class="btn btn-amber" id="btnSave">端末に保存</button>
     <button class="btn" id="btnList">📋 履歴から呼び出す</button>
     <button class="btn" id="btnTools">🛠 現場ツール</button>
     <span class="save-status" id="saveStatus"></span>
@@ -1490,22 +1489,16 @@
     toast('新規点検を開始しました');
   });
 
-  document.getElementById('btnSave').addEventListener('click', saveCurrent);
-
   async function saveCurrent(){
     state.updatedAt = new Date().toISOString();
-    const btn = document.getElementById('btnSave');
-    btn.disabled = true;
     try {
       const result = await window.storage.set('inspection:'+state.id, JSON.stringify(state), false);
       if (!result) throw new Error('no result');
       markSaved();
-      toast('端末に保存しました');
+      return true;
     } catch(err){
       console.error('save error', err);
-      toast('保存に失敗しました。もう一度お試しください。');
-    } finally {
-      btn.disabled = false;
+      return false;
     }
   }
 
@@ -2026,7 +2019,26 @@
     });
   });
 
-  // ---------- ページ離脱時の警告・自動保存（10分ごと、端末のみ／写真は対象外） ----------
+  // ---------- 測定値欄：Enterキーで次の測定値欄へジャンプ ----------
+  // 開放電圧は行ごとに1つ、絶縁抵抗(直流)はP側→N側の順でDOM上に並んでいるため、
+  // ページ全体で「次の.measured欄」を辿るだけでP側→N側→次の行のP側→N側…の順になる
+  document.addEventListener('keydown', e=>{
+    if (e.key !== 'Enter') return;
+    const target = e.target;
+    if (!target.classList || !target.classList.contains('measured')) return;
+    e.preventDefault();
+    const all = Array.from(document.querySelectorAll('.cell-input.measured'));
+    const idx = all.indexOf(target);
+    if (idx >= 0 && idx < all.length - 1){
+      const next = all[idx + 1];
+      next.focus();
+      if (next.select) next.select();
+    } else if (idx === all.length - 1){
+      target.blur();
+    }
+  });
+
+  // ---------- ページ離脱時の警告・自動保存（3分ごと、端末のみ／写真は対象外） ----------
   function hasUnsavedChanges(){
     return document.getElementById('saveStatus').textContent === '未保存の変更があります';
   }
@@ -2039,9 +2051,9 @@
   });
   setInterval(()=>{
     if (hasUnsavedChanges()){
-      saveCurrent().then(()=>{ toast('自動保存しました（端末）'); });
+      saveCurrent().then(ok=>{ if (ok) toast('自動保存しました（端末）'); });
     }
-  }, 600000);
+  }, 180000);
 
   // ---------- init ----------
   loadInfoIntoForm();
