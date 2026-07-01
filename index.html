@@ -2248,7 +2248,7 @@
     }
   });
 
-  // ---------- ページ離脱時の警告・自動保存（3分ごと、端末のみ／写真は対象外） ----------
+  // ---------- ページ離脱時の警告・自動保存（3分ごと、端末＋ログイン中はGoogleドライブにも／写真は対象外） ----------
   function hasUnsavedChanges(){
     return document.getElementById('saveStatus').textContent === '未保存の変更があります';
   }
@@ -2260,9 +2260,16 @@
     }
   });
   setInterval(()=>{
-    if (hasUnsavedChanges()){
-      saveCurrent().then(ok=>{ if (ok) toast('自動保存しました（端末）'); });
-    }
+    if (!hasUnsavedChanges()) return;
+    saveCurrent().then(ok=>{
+      if (!ok) return;
+      if (isGasConfigured() && currentUser){
+        saveToDrive(true);
+        toast('自動保存しました（端末＋Googleドライブ）');
+      } else {
+        toast('自動保存しました（端末）');
+      }
+    });
   }, 180000);
 
   // 端末に自動保存された下書きがあれば、起動時に復元する
