@@ -359,14 +359,7 @@
   }
   .logout-btn:hover{background:#fff;}
 
-  /* ---------- history modal tabs ---------- */
-  .hist-tabs{display:flex;gap:6px;padding:10px 16px 0;}
-  .hist-tab{
-    font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;
-    border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-soft);
-    padding:7px 12px;border-radius:20px 20px 0 0;cursor:pointer;
-  }
-  .hist-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  /* ---------- history modal ---------- */
   .hist-user-row{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);}
   .hist-user-row input{
     flex:1;font-size:12px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px;
@@ -856,7 +849,6 @@
   }
 
   let state = blankState();
-  let listCache = [];
 
   // ---------- toast ----------
   let toastTimer;
@@ -1522,43 +1514,26 @@
     if (!currentUser) return;
     state.updatedAt = new Date().toISOString();
     const baseName = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr()) + '_' + state.id;
-    const jsonFname = baseName + '.json';
-    const csvFname = baseName + '.csv';
-    const postToDrive = (fileName, fileType, content) => fetch(GAS_URL, {
+    const payload = {
+      action: 'save',
+      userName: currentUser,
+      files: [
+        { fileName: baseName + '.json', fileType: 'json', content: JSON.stringify(state) },
+        { fileName: baseName + '.csv', fileType: 'csv', content: buildCsvContent() }
+      ]
+    };
+    fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({action:'save', userName: currentUser, fileName, fileType, content})
-    });
-    Promise.all([
-      postToDrive(jsonFname, 'json', JSON.stringify(state)),
-      postToDrive(csvFname, 'csv', buildCsvContent())
-    ]).then(()=>{
+      body: JSON.stringify(payload)
+    }).then(()=>{
       markSaved();
       if (!silent) toast('Googleドライブにも保存しました（JSON・CSV／' + currentUser + '）');
     }).catch(err=>{
       console.error('drive save error', err);
       if (!silent) toast('Googleドライブへの保存に失敗しました');
     });
-  }
-
-  async function fetchList(){
-    try {
-      const listResult = await window.storage.list('inspection:', false);
-      const keys = (listResult && listResult.keys) || [];
-      const records = [];
-      for (const k of keys){
-        try {
-          const r = await window.storage.get(k, false);
-          if (r && r.value) records.push(JSON.parse(r.value));
-        } catch(e){ /* skip unreadable record */ }
-      }
-      records.sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||''));
-      return records;
-    } catch(err){
-      console.error('list error', err);
-      return null;
-    }
   }
 
   document.getElementById('btnList').addEventListener('click', openListModal);
@@ -1579,12 +1554,8 @@
     backdrop.innerHTML = `
       <div class="modal">
         <div class="modal-head">
-          <h3 class="display">履歴一覧</h3>
+          <h3 class="display">履歴一覧（Googleドライブ）</h3>
           <button class="icon-btn" id="modalClose">✕</button>
-        </div>
-        <div class="hist-tabs">
-          <button class="hist-tab active" data-histtab="local">📱 端末</button>
-          <button class="hist-tab" data-histtab="drive">☁️ Googleドライブ</button>
         </div>
         <div class="modal-body" id="modalBody">
           <div class="empty-note">読み込み中…</div>
@@ -1594,73 +1565,8 @@
     document.body.appendChild(backdrop);
     backdrop.addEventListener('click', e=>{ if(e.target===backdrop) backdrop.remove(); });
     document.getElementById('modalClose').addEventListener('click', ()=>backdrop.remove());
-    backdrop.querySelectorAll('.hist-tab').forEach(tab=>{
-      tab.addEventListener('click', ()=>{
-        backdrop.querySelectorAll('.hist-tab').forEach(t=>t.classList.remove('active'));
-        tab.classList.add('active');
-        const which = tab.getAttribute('data-histtab');
-        if (which === 'local') renderLocalHistory(backdrop);
-        else renderDriveHistory(backdrop, currentUser);
-      });
-    });
 
-    await renderLocalHistory(backdrop);
-  }
-
-  async function renderLocalHistory(backdrop){
-    const body = backdrop.querySelector('#modalBody');
-    body.innerHTML = '<div class="empty-note">読み込み中…</div>';
-    const records = await fetchList();
-    if (records === null){
-      body.innerHTML = '<div class="empty-note">一覧の取得に失敗しました。</div>';
-      return;
-    }
-    if (records.length === 0){
-      body.innerHTML = '<div class="empty-note">端末に保存された点検記録はまだありません。</div>';
-      return;
-    }
-    listCache = records;
-    body.innerHTML = records.map(r=>{
-      const vCount = (r.voltageGroups||[]).reduce((s,g)=>s+g.rows.length,0);
-      const iCount = (r.insulationGroups||[]).reduce((s,g)=>s+g.rows.length,0);
-      const acCount = (r.insulationAcRows||[]).length;
-      const gCount = (r.groundingRows||[]).length;
-      return `
-      <div class="rec-item">
-        <div class="rec-main" data-load="${r.id}">
-          <div class="plant">${esc(r.info.plant) || '（発電所名未入力）'}</div>
-          <div class="meta">${esc(r.info.date) || '日付未設定'} ・ ${esc(r.info.inspector) || '点検者未設定'} ・ 開放電圧${vCount} / 絶縁抵抗(直流)${iCount} / 絶縁抵抗(交流)${acCount} / 接地${gCount}</div>
-        </div>
-        <div class="rec-actions">
-          <button class="icon-btn" data-load="${r.id}" title="呼び出して編集">呼出し</button>
-          <button class="icon-btn" data-delrec="${r.id}" title="削除">🗑</button>
-        </div>
-      </div>
-    `;}).join('');
-    body.querySelectorAll('[data-load]').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const rec = listCache.find(x=>x.id===el.getAttribute('data-load'));
-        if (rec){
-          applyLoadedState(rec);
-          backdrop.remove();
-          toast('点検記録を呼び出しました。修正して再保存できます');
-        }
-      });
-    });
-    body.querySelectorAll('[data-delrec]').forEach(el=>{
-      el.addEventListener('click', async ()=>{
-        const id = el.getAttribute('data-delrec');
-        if (!confirm('この点検記録を削除しますか？元に戻せません。')) return;
-        try {
-          await window.storage.delete('inspection:'+id, false);
-          toast('削除しました');
-          renderLocalHistory(backdrop);
-        } catch(err){
-          console.error('delete error', err);
-          toast('削除に失敗しました');
-        }
-      });
-    });
+    await renderDriveHistory(backdrop, currentUser);
   }
 
   async function renderDriveHistory(backdrop, targetUser){
