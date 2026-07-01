@@ -1521,15 +1521,21 @@
     if (!isGasConfigured()) return;
     if (!currentUser) return;
     state.updatedAt = new Date().toISOString();
-    const fname = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr()) + '_' + state.id + '.json';
-    fetch(GAS_URL, {
+    const baseName = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr()) + '_' + state.id;
+    const jsonFname = baseName + '.json';
+    const csvFname = baseName + '.csv';
+    const postToDrive = (fileName, fileType, content) => fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({action:'save', userName: currentUser, fileName: fname, jsonContent: JSON.stringify(state)})
-    }).then(()=>{
+      body: JSON.stringify({action:'save', userName: currentUser, fileName, fileType, content})
+    });
+    Promise.all([
+      postToDrive(jsonFname, 'json', JSON.stringify(state)),
+      postToDrive(csvFname, 'csv', buildCsvContent())
+    ]).then(()=>{
       markSaved();
-      if (!silent) toast('Googleドライブにも保存しました（' + currentUser + ' / ' + fname + '）');
+      if (!silent) toast('Googleドライブにも保存しました（JSON・CSV／' + currentUser + '）');
     }).catch(err=>{
       console.error('drive save error', err);
       if (!silent) toast('Googleドライブへの保存に失敗しました');
