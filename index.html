@@ -225,6 +225,8 @@
     font-weight:700;
   }
   .mini-btn:hover{background:var(--blue-soft);}
+  .mini-btn-danger{color:var(--ng);border-color:#e5b9b5;}
+  .mini-btn-danger:hover{background:var(--ng-soft);}
   .mini-copy{
     border:1px solid var(--line-strong);background:#fff;color:var(--blue);
     font-size:10px;padding:6px 5px;border-radius:6px;cursor:pointer;white-space:nowrap;
@@ -257,6 +259,8 @@
   .wa-status{font-size:12px;color:var(--ink-soft);margin-top:6px;min-height:16px;}
 
   .footnote{font-size:11.5px;color:var(--ink-soft);line-height:1.7;border-top:1px dashed var(--line-strong);padding-top:10px;margin-top:4px;}
+  .bottom-save-bar{display:flex;justify-content:center;padding:6px 0 8px;}
+  .bottom-save-btn{font-size:15px;padding:14px 28px;font-weight:700;}
 
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(30,42,50,.45);display:flex;align-items:flex-start;
@@ -584,6 +588,10 @@
       <div class="footnote">
         ※ 判定基準は目安です（A種・C種＝10Ω以下、D種＝100Ω以下を初期値としています／B種は設備条件により個別計算が必要なため空欄です）。実際の接地工事の種類・回路条件に応じて必ずご確認ください。
       </div>
+    </div>
+
+    <div class="bottom-save-bar">
+      <button class="btn btn-primary bottom-save-btn" id="btnExportBoldBottom" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を端末に書き出します。ログイン中はGoogleドライブにも保存されます">☁️ クラウドに保存</button>
     </div>
 
   </div>
@@ -992,6 +1000,7 @@
         const {diff, judge} = calcVoltageRow(row);
         return `
           <tr>
+            <td><input type="checkbox" class="row-select-cb" data-group="${g.id}" data-rowid="${row.id}"></td>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="name" value="${esc(row.name)}" placeholder="例：ストリング1"></td>
             <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal" enterkeyhint="next"></td>
@@ -1023,6 +1032,7 @@
       <div class="table-scroll">
           <table>
             <thead><tr>
+              <th style="width:22px;"><input type="checkbox" class="row-select-all" data-selectall-v="${g.id}" title="全選択/解除"></th>
               <th style="width:24px;">No</th>
               <th style="min-width:96px;">ストリング名</th>
               <th style="width:90px;">測定値 (V)</th>
@@ -1044,6 +1054,7 @@
             <input type="number" class="bulk-count-input" id="bulkcount-v-${g.id}" min="1" max="50" value="1">
             <button class="mini-btn" data-bulkadd-v="${g.id}">まとめて追加</button>
           </span>
+          <button class="mini-btn mini-btn-danger" data-bulkdel-v="${g.id}">🗑 選択した行を削除</button>
         </div>
         <div class="bulk-note">※まとめて追加すると、1行目の公称Voc・直列枚数・開放電圧の内容がコピーされます</div>
       `;
@@ -1190,6 +1201,27 @@
       renderVoltageGroups();
       renderInsulationGroups();
       toast(n + '行まとめて追加しました（1行目の内容をコピー）');
+      return;
+    }
+    const selectAllV = e.target.closest('[data-selectall-v]');
+    if (selectAllV){
+      const gid = selectAllV.getAttribute('data-selectall-v');
+      const checked = selectAllV.checked;
+      document.querySelectorAll('.row-select-cb[data-group="'+gid+'"]').forEach(cb=> cb.checked = checked);
+      return;
+    }
+    const bulkDelV = e.target.closest('[data-bulkdel-v]');
+    if (bulkDelV){
+      const gid = bulkDelV.getAttribute('data-bulkdel-v');
+      const g = state.voltageGroups.find(x=>x.id===gid);
+      if (!g) return;
+      const ids = Array.from(document.querySelectorAll('.row-select-cb[data-group="'+gid+'"]:checked')).map(cb=>cb.getAttribute('data-rowid'));
+      if (!ids.length){ toast('削除する行にチェックを入れてください'); return; }
+      if (!confirm(ids.length + '行を削除しますか？元に戻せません。')) return;
+      g.rows = g.rows.filter(r=>!ids.includes(r.id));
+      markDirty();
+      renderVoltageGroups();
+      toast(ids.length + '行削除しました');
     }
   });
   document.getElementById('addVoltageGroup').addEventListener('click', ()=>{
@@ -1233,6 +1265,7 @@
         const {judgeP, judgeN} = calcInsulationRow(row);
         return `
           <tr>
+            <td><input type="checkbox" class="row-select-cb" data-group="${g.id}" data-rowid="${row.id}"></td>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：PCS1 直流入力"></td>
             <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal" enterkeyhint="next"></td>
@@ -1263,6 +1296,7 @@
       <div class="table-scroll">
           <table>
             <thead><tr>
+              <th style="width:22px;"><input type="checkbox" class="row-select-all" data-selectall-i="${g.id}" title="全選択/解除"></th>
               <th style="width:24px;">No</th>
               <th style="min-width:96px;">測定箇所</th>
               <th style="width:84px;">P側 測定値<br>(MΩ)</th>
@@ -1287,6 +1321,7 @@
             <input type="number" class="bulk-count-input" id="bulkcount-i-${g.id}" min="1" max="50" value="1">
             <button class="mini-btn" data-bulkadd-i="${g.id}">まとめて追加</button>
           </span>
+          <button class="mini-btn mini-btn-danger" data-bulkdel-i="${g.id}">🗑 選択した行を削除</button>
         </div>
         <div class="bulk-note">※まとめて追加すると、1行目の試験電圧・判定基準の内容がコピーされます</div>
       `;
@@ -1416,6 +1451,27 @@
       markDirty();
       renderInsulationGroups();
       toast(n + '行まとめて追加しました（1行目の内容をコピー）');
+      return;
+    }
+    const selectAllI = e.target.closest('[data-selectall-i]');
+    if (selectAllI){
+      const gid = selectAllI.getAttribute('data-selectall-i');
+      const checked = selectAllI.checked;
+      document.querySelectorAll('.row-select-cb[data-group="'+gid+'"]').forEach(cb=> cb.checked = checked);
+      return;
+    }
+    const bulkDelI = e.target.closest('[data-bulkdel-i]');
+    if (bulkDelI){
+      const gid = bulkDelI.getAttribute('data-bulkdel-i');
+      const g = state.insulationGroups.find(x=>x.id===gid);
+      if (!g) return;
+      const ids = Array.from(document.querySelectorAll('.row-select-cb[data-group="'+gid+'"]:checked')).map(cb=>cb.getAttribute('data-rowid'));
+      if (!ids.length){ toast('削除する行にチェックを入れてください'); return; }
+      if (!confirm(ids.length + '行を削除しますか？元に戻せません。')) return;
+      g.rows = g.rows.filter(r=>!ids.includes(r.id));
+      markDirty();
+      renderInsulationGroups();
+      toast(ids.length + '行削除しました');
     }
   });
   document.getElementById('addInsulationGroup').addEventListener('click', ()=>{
@@ -1668,10 +1724,14 @@
       body.innerHTML = '<div class="empty-note">Googleドライブが未設定です。Apps Scriptをデプロイし、アプリのGAS_URLを設定してください。</div>';
       return;
     }
+    if (!currentUser){
+      body.innerHTML = '<div class="empty-note">ログインしてください。</div>';
+      return;
+    }
     const viewUser = targetUser || currentUser || '';
     body.innerHTML = `
       <div class="hist-user-row">
-        <span style="font-size:11.5px;color:var(--ink-soft);white-space:nowrap;">表示するユーザー</span>
+        <span style="font-size:11.5px;color:var(--ink-soft);white-space:nowrap;">表示するユーザー（同じ会社のみ）</span>
         <select id="driveTargetUser"><option value="">読み込み中…</option></select>
       </div>
       <div id="driveListArea"><div class="empty-note">読み込み中…</div></div>
@@ -1681,24 +1741,15 @@
       renderDriveHistory(backdrop, selectEl.value);
     });
 
-    // ユーザー一覧を会社名でグループ化してプルダウンに表示
+    // 自分と同じ会社のユーザーだけをプルダウンに表示（他社のユーザーはサーバー側で除外済み）
     try{
-      const ulRes = await fetch(GAS_URL + '?action=getUserList');
+      const ulRes = await fetch(GAS_URL + '?action=getUserList&user=' + encodeURIComponent(currentUser));
       const ulData = await ulRes.json();
-      const users = ulData.users || [];
+      const users = (ulData.ok && ulData.users) ? ulData.users : [];
       if (!users.length){
-        selectEl.innerHTML = viewUser ? `<option value="${esc(viewUser)}" selected>${esc(viewUser)}</option>` : '<option value="">（ユーザー未登録）</option>';
+        selectEl.innerHTML = viewUser ? `<option value="${esc(viewUser)}" selected>${esc(viewUser)}</option>` : '<option value="">（同じ会社のユーザーが見つかりません）</option>';
       } else {
-        const byCompany = {};
-        users.forEach(u=>{
-          const c = u.company || '未設定';
-          if (!byCompany[c]) byCompany[c] = [];
-          byCompany[c].push(u.name);
-        });
-        selectEl.innerHTML = Object.keys(byCompany).sort().map(company=>{
-          const opts = byCompany[company].map(name=>`<option value="${esc(name)}" ${name===viewUser?'selected':''}>${esc(name)}</option>`).join('');
-          return `<optgroup label="${esc(company)}">${opts}</optgroup>`;
-        }).join('');
+        selectEl.innerHTML = users.map(u=>`<option value="${esc(u.name)}" ${u.name===viewUser?'selected':''}>${esc(u.name)}</option>`).join('');
         if (!viewUser) selectEl.selectedIndex = 0;
       }
     } catch(err){
@@ -1743,7 +1794,7 @@
           const fid = el.getAttribute('data-driveload');
           toast('読み込み中…');
           try{
-            const r = await fetch(GAS_URL + '?action=getFile&fileId=' + encodeURIComponent(fid));
+            const r = await fetch(GAS_URL + '?action=getFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser));
             const d = await r.json();
             if (!d.ok) throw new Error(d.message||'read failed');
             const parsed = JSON.parse(d.content);
@@ -1752,7 +1803,7 @@
             toast('Googleドライブから読み込みました。修正して再保存できます');
           } catch(err){
             console.error('drive load error', err);
-            toast('読み込みに失敗しました');
+            toast('読み込みに失敗しました：' + (err.message||''));
           }
         });
       });
@@ -1761,7 +1812,7 @@
           const fid = el.getAttribute('data-drivedel');
           if (!confirm('この記録をGoogleドライブから削除しますか？元に戻せません。')) return;
           try{
-            const r = await fetch(GAS_URL + '?action=deleteFile&fileId=' + encodeURIComponent(fid));
+            const r = await fetch(GAS_URL + '?action=deleteFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser));
             const d = await r.json();
             if (d.ok){ toast('削除しました'); renderDriveHistory(backdrop, viewUser); }
             else { toast('削除に失敗しました：' + (d.message||'')); }
@@ -1853,7 +1904,7 @@
     return `${d}_${plant}_${who}`;
   }
 
-  document.getElementById('btnExportBoth').addEventListener('click', ()=>{
+  function exportBothAndSaveToDrive(){
     const baseName = buildBaseFileName();
     downloadBlob(buildCsvContent(), 'text/csv;charset=utf-8;', '入力値Excelでの編集用', baseName + '.csv');
     downloadBlob(JSON.stringify(state, null, 2), 'application/json', 'バックアップ読み出し用', baseName + '.json');
@@ -1863,7 +1914,9 @@
     } else {
       toast('CSVとバックアップを書き出しました（フォルダ分けされます）');
     }
-  });
+  }
+  document.getElementById('btnExportBoth').addEventListener('click', exportBothAndSaveToDrive);
+  document.getElementById('btnExportBoldBottom').addEventListener('click', exportBothAndSaveToDrive);
 
   // ---------- auto weather fetch (Open-Meteo, no API key required) ----------
   function waStatus(msg){ document.getElementById('waStatus').textContent = msg || ''; }
