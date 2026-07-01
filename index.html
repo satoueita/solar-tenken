@@ -706,6 +706,7 @@
 (function(){
   const uid = () => 'r' + Math.random().toString(36).slice(2, 10);
   const todayStr = () => new Date().toISOString().slice(0,10);
+  const DRAFT_KEY = 'inspection:draft';
 
   // ============================================================
   // Googleドライブ連携（Google Apps Script WebApp 経由・要デプロイ）
@@ -1656,6 +1657,7 @@
     if (document.getElementById('saveStatus').textContent === '未保存の変更があります') {
       if (!confirm('未保存の変更があります。新規点検を開始しますか？')) return;
     }
+    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
     state = blankState();
     if (currentUser){ state.info.inspector = currentUser; }
     loadInfoIntoForm();
@@ -1670,7 +1672,7 @@
   async function saveCurrent(){
     state.updatedAt = new Date().toISOString();
     try {
-      localStorage.setItem('inspection:'+state.id, JSON.stringify(state));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
       markSaved();
       return true;
     } catch(err){
@@ -1716,6 +1718,7 @@
     renderInsulationAcRows();
     renderGroundingRows();
     markSaved();
+    try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); }catch(e){}
   }
 
   async function openListModal(){
@@ -2261,6 +2264,20 @@
       saveCurrent().then(ok=>{ if (ok) toast('自動保存しました（端末）'); });
     }
   }, 180000);
+
+  // 端末に自動保存された下書きがあれば、起動時に復元する
+  try{
+    const draftRaw = localStorage.getItem(DRAFT_KEY);
+    if (draftRaw){
+      const draftParsed = JSON.parse(draftRaw);
+      if (draftParsed && draftParsed.info){
+        state = normalizeState(draftParsed);
+        toast('前回の自動保存データを復元しました');
+      }
+    }
+  }catch(err){
+    console.error('draft restore error', err);
+  }
 
   // ---------- init ----------
   loadInfoIntoForm();
