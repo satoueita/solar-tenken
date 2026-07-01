@@ -416,12 +416,9 @@
 
   <div class="toolbar">
     <button class="btn btn-primary" id="btnNew">＋ 新規点検</button>
+    <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を端末に書き出します。ログイン中はGoogleドライブにも保存されます">☁️ クラウドに保存</button>
     <button class="btn btn-amber" id="btnSave">端末に保存</button>
     <button class="btn" id="btnList">📋 履歴から呼び出す</button>
-    <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を一度に書き出します。ログイン中はGoogleドライブにも保存されます">書き出し（CSV＋バックアップ）</button>
-    <button class="btn" id="btnJsonImportTrigger" title="書き出したバックアップ(.json)を読み込み、編集を再開します">バックアップ読み込み（.json）</button>
-    <input type="file" id="jsonFileInput" accept="application/json" style="display:none;">
-    <button class="btn" id="btnPrint">🖨 印刷</button>
     <button class="btn" id="btnTools">🛠 現場ツール</button>
     <span class="save-status" id="saveStatus"></span>
   </div>
@@ -1829,28 +1826,6 @@
       toast('CSVとバックアップを書き出しました（フォルダ分けされます）');
     }
   });
-
-  document.getElementById('btnJsonImportTrigger').addEventListener('click', ()=>{
-    document.getElementById('jsonFileInput').click();
-  });
-  document.getElementById('jsonFileInput').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if (!file) return;
-    try{
-      const text = await file.text();
-      const parsed = JSON.parse(text);
-      if (!parsed || !parsed.info) throw new Error('invalid file');
-      applyLoadedState(parsed);
-      toast('バックアップを読み込みました');
-    } catch(err){
-      console.error('json import error', err);
-      toast('読み込みに失敗しました。ファイル形式をご確認ください。');
-    } finally {
-      e.target.value = '';
-    }
-  });
-
-  document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
 
   // ---------- auto weather fetch (Open-Meteo, no API key required) ----------
   function waStatus(msg){ document.getElementById('waStatus').textContent = msg || ''; }
