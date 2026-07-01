@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>太陽光発電所 点検記録</title>
+<title>太陽光発電所点検記録（匡電気管理事務株式会社）</title>
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,6 +53,7 @@
   .gauge-icon{flex:0 0 auto;}
   .topbar h1{font-size:22px;font-weight:900;margin:0;letter-spacing:.02em;}
   .topbar p{margin:2px 0 0;font-size:12.5px;color:#c9d6d1;letter-spacing:.02em;}
+  .topbar p.company-name{font-size:12.5px;font-weight:700;color:var(--amber);margin-top:3px;}
 
   .toolbar{
     max-width:1120px;margin:0 auto;padding:12px 20px 0;
@@ -113,6 +114,11 @@
     display:flex;align-items:center;gap:6px;
   }
   .device-block-title::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue);}
+  .other-device-row{
+    display:grid;grid-template-columns:1.3fr 1.3fr 0.8fr 0.9fr auto;gap:6px;
+    align-items:center;margin-bottom:6px;
+  }
+  @media (max-width:760px){ .other-device-row{grid-template-columns:1fr 1fr;} }
 
   .tol-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-bottom:14px;flex-wrap:wrap;}
   .tol-row input{
@@ -131,9 +137,20 @@
     width:100%;min-width:56px;font-size:13px;padding:6px 7px;
     border:1px solid var(--line-strong);border-radius:6px;background:#fff;
     font-family:'JetBrains Mono',monospace;
+    -webkit-appearance:none;appearance:none;color-scheme:light;color:var(--ink);
   }
-  .cell-input.text{font-family:'Noto Sans JP',sans-serif;min-width:100px;}
-  .cell-input.note{min-width:96px;}
+  .cell-input.text{font-family:'Noto Sans JP',sans-serif;min-width:70px;font-size:12px;padding:5px 6px;}
+  .cell-input.note{min-width:80px;}
+  .cell-input.measured{
+    min-width:88px;font-size:17px;font-weight:800;
+    padding:9px 8px;text-align:center;
+    background:var(--amber-soft) !important;border:2px solid var(--amber);color:#8a4e12 !important;
+    border-radius:8px;-webkit-text-fill-color:#8a4e12;
+  }
+  .cell-input.measured::placeholder{color:#b8894a;font-weight:600;opacity:1;}
+  .cell-input.measured:focus{
+    outline:2px solid var(--amber);outline-offset:1px;background:#fff !important;-webkit-text-fill-color:#8a4e12;
+  }
   select.cell-input{font-family:'Noto Sans JP',sans-serif;}
   .num-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);text-align:center;width:24px;}
   .calc-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);white-space:nowrap;}
@@ -187,10 +204,10 @@
   .mini-btn:hover{background:var(--blue-soft);}
   .mini-copy{
     border:1px solid var(--line-strong);background:#fff;color:var(--blue);
-    font-size:10px;padding:6px 6px;border-radius:6px;cursor:pointer;white-space:nowrap;
+    font-size:10px;padding:6px 5px;border-radius:6px;cursor:pointer;white-space:nowrap;
+    font-weight:700;line-height:1.3;text-align:center;
   }
   .mini-copy:hover{background:var(--blue-soft);}
-  .pn-cell{display:flex;gap:4px;align-items:center;}
 
   .summary-strip{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
   .chip{
@@ -251,46 +268,49 @@
   }
 
   /* ---------- tools modal ---------- */
-  .tools-modal{max-width:420px;}
-  .tool-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 0;}
+  .tools-modal{max-width:480px;}
+  .tool-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px 0;}
   .tool-tab{
-    font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;
+    font-family:'Noto Sans JP',sans-serif;font-size:13.5px;font-weight:700;
     border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-soft);
-    padding:7px 10px;border-radius:20px;cursor:pointer;
+    padding:9px 14px;border-radius:20px;cursor:pointer;
   }
   .tool-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
-  .tools-body{padding:18px 20px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;}
-  .tool-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .tools-body{padding:22px 22px 26px;display:flex;flex-direction:column;align-items:center;gap:18px;}
+  .tool-btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .tool-btn-row .btn{font-size:14.5px;padding:12px 18px;}
 
   .sw-display{
-    font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;
+    font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;
     color:var(--ink);letter-spacing:.02em;
   }
-  .sw-laps{list-style:none;margin:0;padding:0;width:100%;max-height:120px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-soft);}
-  .sw-laps li{padding:4px 8px;border-bottom:1px dashed var(--line);}
+  .sw-laps{list-style:none;margin:0;padding:0;width:100%;max-height:140px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ink-soft);}
+  .sw-laps li{padding:7px 10px;border-bottom:1px dashed var(--line);}
 
   .cam-frame{
     width:100%;aspect-ratio:4/3;background:#1e2a32;border-radius:10px;overflow:hidden;
     display:flex;align-items:center;justify-content:center;position:relative;
   }
   .cam-frame video{width:100%;height:100%;object-fit:cover;}
-  .cam-placeholder{color:#c9d6d1;font-size:12.5px;text-align:center;padding:0 16px;}
-  .cam-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;}
+  .cam-placeholder{color:#c9d6d1;font-size:14px;text-align:center;padding:0 16px;}
+  .cam-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
   .cam-preview-img{max-width:100%;border-radius:8px;border:1px solid var(--line);}
 
   .angle-visual{display:flex;justify-content:center;}
-  .angle-readout{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .angle-readout{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .angle-readout .chip{font-size:14px;padding:8px 14px;}
+  .angle-readout .chip b{font-size:15px;}
 
   .calc-wrap{width:100%;}
   .calc-display{
-    font-family:'JetBrains Mono',monospace;font-size:30px;text-align:right;
-    background:var(--ink);color:#fff;padding:14px 16px;border-radius:8px;margin-bottom:10px;
+    font-family:'JetBrains Mono',monospace;font-size:42px;text-align:right;
+    background:var(--ink);color:#fff;padding:18px 20px;border-radius:10px;margin-bottom:14px;
     overflow-x:auto;white-space:nowrap;
   }
-  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
   .calc-btn{
-    font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;
-    padding:14px 0;border-radius:8px;border:1px solid var(--line-strong);
+    font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;
+    padding:20px 0;border-radius:10px;border:1px solid var(--line-strong);
     background:var(--surface-2);color:var(--ink);cursor:pointer;
   }
   .calc-btn:hover{background:#fff;}
@@ -356,7 +376,7 @@
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <div class="login-logo">太陽光発電所 点検記録<br><span>氏名を入力してログインしてください</span></div>
+    <div class="login-logo">太陽光発電所 点検記録<br><span style="color:var(--amber);font-weight:700;">匡電気管理事務株式会社</span><br><span>氏名を入力してログインしてください</span></div>
     <input class="login-input" id="loginUserInput" type="text" placeholder="氏名を入力" autocomplete="name">
     <button class="login-btn" id="loginBtn">ログイン</button>
     <div class="login-err" id="loginErr"></div>
@@ -380,6 +400,7 @@
       </svg>
       <div>
         <h1 class="display">太陽光発電所 点検記録</h1>
+        <p class="company-name">匡電気管理事務株式会社</p>
         <p>開放電圧・絶縁抵抗・接地抵抗測定 &mdash; 現場入力アプリ</p>
       </div>
     </div>
@@ -396,9 +417,8 @@
   <div class="toolbar">
     <button class="btn btn-primary" id="btnNew">＋ 新規点検</button>
     <button class="btn btn-amber" id="btnSave">端末に保存</button>
-    <button class="btn btn-ghost-blue" id="btnDriveSave">☁️ Driveに保存</button>
     <button class="btn" id="btnList">📋 履歴から呼び出す</button>
-    <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を一度に書き出します">書き出し（CSV＋バックアップ）</button>
+    <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を一度に書き出します。ログイン中はGoogleドライブにも保存されます">書き出し（CSV＋バックアップ）</button>
     <button class="btn" id="btnJsonImportTrigger" title="書き出したバックアップ(.json)を読み込み、編集を再開します">バックアップ読み込み（.json）</button>
     <input type="file" id="jsonFileInput" accept="application/json" style="display:none;">
     <button class="btn" id="btnPrint">🖨 印刷</button>
@@ -429,6 +449,14 @@
         <div class="field"><label>備考</label><input id="f_memo" placeholder="全体備考"></div>
       </div>
 
+      <div class="weather-auto-row">
+        <button class="btn btn-ghost-blue" id="btnGeoWeather" type="button">📍 現在地から気温・湿度・天候を取得</button>
+        <span class="wa-divider">または</span>
+        <input id="f_placeSearch" class="wa-place-input" placeholder="地名を入力（例：盛岡市）">
+        <button class="btn btn-ghost-blue" id="btnPlaceWeather" type="button">🔍 地名で取得</button>
+      </div>
+      <div class="wa-status" id="waStatus"></div>
+
       <div class="device-section">
         <div>
           <div class="device-block-title">開放電圧測定器</div>
@@ -446,15 +474,21 @@
             <div class="field"><label>製造番号</label><input id="f_devR_serial" placeholder="例：SN-67890"></div>
           </div>
         </div>
-      </div>
+        <div>
+          <div class="device-block-title">接地抵抗測定器</div>
+          <div class="grid grid-3">
+            <div class="field"><label>型式・名称</label><input id="f_devG_name" placeholder="例：接地抵抗計 ◯◯"></div>
+            <div class="field"><label>製造年</label><input id="f_devG_year" placeholder="例：2023" inputmode="numeric"></div>
+            <div class="field"><label>製造番号</label><input id="f_devG_serial" placeholder="例：SN-24680"></div>
+          </div>
+        </div>
 
-      <div class="weather-auto-row">
-        <button class="btn btn-ghost-blue" id="btnGeoWeather" type="button">📍 現在地から気象データを取得</button>
-        <span class="wa-divider">または</span>
-        <input id="f_placeSearch" class="wa-place-input" placeholder="地名を入力（例：盛岡市）">
-        <button class="btn btn-ghost-blue" id="btnPlaceWeather" type="button">🔍 地名で取得</button>
+        <div>
+          <div class="device-block-title">その他の測定器</div>
+          <div id="otherDevicesWrap"></div>
+          <button class="add-row-btn small" id="addOtherDevice" style="margin-top:6px;">＋ 測定器を追加</button>
+        </div>
       </div>
-      <div class="wa-status" id="waStatus"></div>
     </div>
 
     <!-- 開放電圧測定 -->
@@ -500,10 +534,10 @@
             <tr>
               <th style="width:24px;">No</th>
               <th style="min-width:110px;">測定箇所</th>
-              <th style="width:76px;">試験電圧</th>
-              <th style="width:88px;">判定基準<br>(MΩ)</th>
               <th style="width:88px;">測定値<br>(MΩ)</th>
               <th style="width:60px;">判定</th>
+              <th style="width:76px;">試験電圧</th>
+              <th style="width:88px;">判定基準<br>(MΩ)</th>
               <th style="min-width:96px;">備考</th>
               <th style="width:28px;"></th>
             </tr>
@@ -529,10 +563,10 @@
               <th style="width:24px;">No</th>
               <th style="width:96px;">箇所種別</th>
               <th style="min-width:110px;">詳細名称</th>
-              <th style="width:84px;">接地極種別</th>
-              <th style="width:88px;">判定基準<br>(Ω)</th>
               <th style="width:88px;">測定値<br>(Ω)</th>
               <th style="width:60px;">判定</th>
+              <th style="width:84px;">接地極種別</th>
+              <th style="width:88px;">判定基準<br>(Ω)</th>
               <th style="min-width:96px;">備考</th>
               <th style="width:28px;"></th>
             </tr>
@@ -589,7 +623,10 @@
         <div class="wa-status" id="camStatus"></div>
         <div class="cam-preview-wrap">
           <img id="camPreviewImg" class="cam-preview-img" style="display:none;">
-          <a id="camDownload" class="btn btn-amber" style="display:none;">写真を保存</a>
+          <div class="tool-btn-row">
+            <a id="camDownload" class="btn btn-amber" style="display:none;">端末に保存</a>
+            <button id="camDriveSave" class="btn btn-ghost-blue" style="display:none;" type="button">☁️ Driveに保存</button>
+          </div>
         </div>
       </div>
 
@@ -698,6 +735,9 @@
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('userNameDisp').textContent = '👤 ' + name;
     updateDriveStatusUI();
+    if (!state.info.inspector){ state.info.inspector = name; }
+    if (!state.info.date){ state.info.date = todayStr(); }
+    loadInfoIntoForm();
   }
   function doLogout(){
     if (!confirm('ログアウトしますか？')) return;
@@ -762,7 +802,9 @@
       info: {
         plant:'', date: todayStr(), inspector:'', weather:'', temp:'', humidity:'', memo:'',
         devV: {name:'', year:'', serial:''},
-        devR: {name:'', year:'', serial:''}
+        devR: {name:'', year:'', serial:''},
+        devG: {name:'', year:'', serial:''},
+        otherDevices: []
       },
       tolerance: 10,
       voltageGroups: [vg],
@@ -777,6 +819,10 @@
     s.info = s.info || {};
     if (!s.info.devV) s.info.devV = {name:'',year:'',serial:''};
     if (!s.info.devR) s.info.devR = {name:'',year:'',serial:''};
+    if (!s.info.devG) s.info.devG = {name:'',year:'',serial:''};
+    s.info.otherDevices = (s.info.otherDevices || []).map(d => ({
+      id: d.id || uid(), label: d.label || '', name: d.name || '', year: d.year || '', serial: d.serial || ''
+    }));
     if (s.info.humidity === undefined) s.info.humidity = '';
     s.tolerance = (s.tolerance === undefined) ? 10 : s.tolerance;
     s.voltageGroups = (s.voltageGroups || []).map(g => ({
@@ -842,7 +888,7 @@
     document.getElementById('f_'+key).addEventListener('input', e=>{ state.info[key] = e.target.value; markDirty(); });
   });
   const deviceSubFields = ['name','year','serial'];
-  ['devV','devR'].forEach(dev=>{
+  ['devV','devR','devG'].forEach(dev=>{
     deviceSubFields.forEach(f=>{
       document.getElementById('f_'+dev+'_'+f).addEventListener('input', e=>{ state.info[dev][f] = e.target.value; markDirty(); });
     });
@@ -854,11 +900,60 @@
 
   function loadInfoIntoForm(){
     infoFields.forEach(key=>{ document.getElementById('f_'+key).value = state.info[key] || ''; });
-    ['devV','devR'].forEach(dev=>{
+    ['devV','devR','devG'].forEach(dev=>{
       deviceSubFields.forEach(f=>{ document.getElementById('f_'+dev+'_'+f).value = (state.info[dev] && state.info[dev][f]) || ''; });
     });
     document.getElementById('tolerance').value = state.tolerance;
+    renderOtherDevices();
   }
+
+  // ---------- その他の測定器（追加式） ----------
+  function newOtherDevice(){ return {id:uid(), label:'', name:'', year:'', serial:''}; }
+  function renderOtherDevices(){
+    const wrap = document.getElementById('otherDevicesWrap');
+    wrap.innerHTML = '';
+    if (!state.info.otherDevices.length){
+      wrap.innerHTML = '<div class="empty-note">追加した測定器はありません。</div>';
+      return;
+    }
+    state.info.otherDevices.forEach(d=>{
+      const row = document.createElement('div');
+      row.className = 'other-device-row';
+      row.innerHTML = `
+        <input class="cell-input text" data-id="${d.id}" data-f="label" value="${esc(d.label)}" placeholder="用途・名称（例：接地抵抗計以外の機器）">
+        <input class="cell-input text" data-id="${d.id}" data-f="name" value="${esc(d.name)}" placeholder="型式・名称">
+        <input class="cell-input" data-id="${d.id}" data-f="year" value="${esc(d.year)}" placeholder="製造年" inputmode="numeric">
+        <input class="cell-input" data-id="${d.id}" data-f="serial" value="${esc(d.serial)}" placeholder="製造番号">
+        <button class="row-del" data-delrow="${d.id}" title="削除">✕</button>
+      `;
+      wrap.appendChild(row);
+    });
+  }
+  const otherDevicesWrap = document.getElementById('otherDevicesWrap');
+  otherDevicesWrap.addEventListener('input', e=>{
+    const t = e.target;
+    if (t.matches('[data-f]')){
+      const id = t.getAttribute('data-id'), f = t.getAttribute('data-f');
+      const d = state.info.otherDevices.find(x=>x.id===id);
+      if (!d) return;
+      d[f] = t.value;
+      markDirty();
+    }
+  });
+  otherDevicesWrap.addEventListener('click', e=>{
+    const del = e.target.closest('[data-delrow]');
+    if (del){
+      const id = del.getAttribute('data-delrow');
+      state.info.otherDevices = state.info.otherDevices.filter(x=>x.id!==id);
+      markDirty();
+      renderOtherDevices();
+    }
+  });
+  document.getElementById('addOtherDevice').addEventListener('click', ()=>{
+    state.info.otherDevices.push(newOtherDevice());
+    markDirty();
+    renderOtherDevices();
+  });
 
   // ================= 開放電圧測定 =================
   function calcVoltageRow(row){
@@ -893,6 +988,7 @@
           <tr>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="name" value="${esc(row.name)}" placeholder="例：ストリング1"></td>
+            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
             <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voc" value="${esc(row.voc)}" placeholder="例：40.0" inputmode="decimal"></td>
             <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="count" value="${esc(row.count)}" placeholder="例：20" inputmode="numeric"></td>
             <td>
@@ -902,7 +998,6 @@
               </div>
               <div class="ocv-mode-label" id="ocvlabel-${row.id}">${row.autoOcv ? '自動計算' : '手入力'}</div>
             </td>
-            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
             <td class="calc-col" id="diff-${row.id}">${diff!==null ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—'}</td>
             <td id="judge-${row.id}">${badge(judge)}</td>
             <td><input class="cell-input note text" data-group="${g.id}" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
@@ -923,10 +1018,10 @@
             <thead><tr>
               <th style="width:24px;">No</th>
               <th style="min-width:96px;">ストリング名</th>
+              <th style="width:90px;">測定値 (V)</th>
               <th style="width:88px;">公称Voc (V)</th>
               <th style="width:70px;">直列枚数</th>
               <th style="width:130px;">開放電圧 (V)</th>
-              <th style="width:90px;">測定値 (V)</th>
               <th style="width:72px;">差異 (%)</th>
               <th style="width:56px;">判定</th>
               <th style="min-width:90px;">備考</th>
@@ -1096,21 +1191,17 @@
           <tr>
             <td class="num-col">${idx+1}</td>
             <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：PCS1 直流入力"></td>
+            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal"></td>
+            <td id="judge-p-${row.id}">${badge(judgeP)}</td>
+            <td><button class="mini-copy" data-copypn="${row.id}" data-group="${g.id}" title="P側の値をN側にコピー">P→N<br>値をコピー</button></td>
+            <td><input class="cell-input measured" data-group="${g.id}" data-id="${row.id}" data-f="measuredN" value="${esc(row.measuredN)}" placeholder="N側" inputmode="decimal"></td>
+            <td id="judge-n-${row.id}">${badge(judgeN)}</td>
             <td>
               <select class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voltage">
                 ${['250V','500V','1000V'].map(v=>`<option ${row.voltage===v?'selected':''}>${v}</option>`).join('')}
               </select>
             </td>
             <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：1.0" inputmode="decimal"></td>
-            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal"></td>
-            <td id="judge-p-${row.id}">${badge(judgeP)}</td>
-            <td>
-              <div class="pn-cell">
-                <input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measuredN" value="${esc(row.measuredN)}" placeholder="N側" inputmode="decimal">
-                <button class="mini-copy" data-copypn="${row.id}" data-group="${g.id}" title="P側の値をN側にコピー">P→N</button>
-              </div>
-            </td>
-            <td id="judge-n-${row.id}">${badge(judgeN)}</td>
             <td><input class="cell-input note text" data-group="${g.id}" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
             <td><button class="row-del" data-group="${g.id}" data-delrow="${row.id}" title="削除">✕</button></td>
           </tr>`;
@@ -1129,12 +1220,13 @@
             <thead><tr>
               <th style="width:24px;">No</th>
               <th style="min-width:96px;">測定箇所</th>
-              <th style="width:76px;">試験電圧</th>
-              <th style="width:84px;">判定基準<br>(MΩ)</th>
               <th style="width:84px;">P側 測定値<br>(MΩ)</th>
               <th style="width:52px;">P判定</th>
-              <th style="width:120px;">N側 測定値<br>(MΩ)</th>
+              <th style="width:64px;"></th>
+              <th style="width:84px;">N側 測定値<br>(MΩ)</th>
               <th style="width:52px;">N判定</th>
+              <th style="width:76px;">試験電圧</th>
+              <th style="width:84px;">判定基準<br>(MΩ)</th>
               <th style="min-width:90px;">備考</th>
               <th style="width:26px;"></th>
             </tr></thead>
@@ -1260,14 +1352,14 @@
       tr.innerHTML = `
         <td class="num-col">${idx+1}</td>
         <td><input class="cell-input text" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：分電盤1"></td>
+        <td><input class="cell-input measured" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
+        <td id="judge-ac-${row.id}">${badge(judge)}</td>
         <td>
           <select class="cell-input" data-id="${row.id}" data-f="voltage">
             ${['125V','250V','500V','1000V'].map(v=>`<option ${row.voltage===v?'selected':''}>${v}</option>`).join('')}
           </select>
         </td>
         <td><input class="cell-input" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：1.0" inputmode="decimal"></td>
-        <td><input class="cell-input" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
-        <td id="judge-ac-${row.id}">${badge(judge)}</td>
         <td><input class="cell-input note text" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
         <td><button class="row-del" data-delrow="${row.id}" title="削除">✕</button></td>
       `;
@@ -1335,14 +1427,14 @@
           </select>
         </td>
         <td><input class="cell-input text" data-id="${row.id}" data-f="label" value="${esc(row.label)}" placeholder="例：PCS1 筐体"></td>
+        <td><input class="cell-input measured" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
+        <td id="judge-g-${row.id}">${badge(judge)}</td>
         <td>
           <select class="cell-input" data-id="${row.id}" data-f="electrodeType">
             ${['A種','B種','C種','D種'].map(v=>`<option ${row.electrodeType===v?'selected':''}>${v}</option>`).join('')}
           </select>
         </td>
         <td><input class="cell-input" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：100" inputmode="decimal"></td>
-        <td><input class="cell-input" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
-        <td id="judge-g-${row.id}">${badge(judge)}</td>
         <td><input class="cell-input note text" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
         <td><button class="row-del" data-delrow="${row.id}" title="削除">✕</button></td>
       `;
@@ -1399,6 +1491,7 @@
       if (!confirm('未保存の変更があります。新規点検を開始しますか？')) return;
     }
     state = blankState();
+    if (currentUser){ state.info.inspector = currentUser; }
     loadInfoIntoForm();
     renderVoltageGroups();
     renderInsulationGroups();
@@ -1427,19 +1520,11 @@
     }
   }
 
-  document.getElementById('btnDriveSave').addEventListener('click', saveToDrive);
-  function saveToDrive(){
-    if (!isGasConfigured()){
-      toast('Googleドライブが未設定です。Apps Scriptを準備してGAS_URLを設定してください');
-      return;
-    }
-    if (!currentUser){
-      toast('ログインしてから保存してください');
-      return;
-    }
+  function saveToDrive(silent){
+    if (!isGasConfigured()) return;
+    if (!currentUser) return;
     state.updatedAt = new Date().toISOString();
     const fname = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr()) + '_' + state.id + '.json';
-    toast('Googleドライブへ保存をリクエストしました…');
     fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -1447,10 +1532,10 @@
       body: JSON.stringify({action:'save', userName: currentUser, fileName: fname, jsonContent: JSON.stringify(state)})
     }).then(()=>{
       markSaved();
-      toast('Googleドライブに保存しました（' + currentUser + ' / ' + fname + '）');
+      if (!silent) toast('Googleドライブにも保存しました（' + currentUser + ' / ' + fname + '）');
     }).catch(err=>{
       console.error('drive save error', err);
-      toast('Googleドライブへの保存に失敗しました');
+      if (!silent) toast('Googleドライブへの保存に失敗しました');
     });
   }
 
@@ -1679,6 +1764,10 @@
     lines.push('区分,型式・名称,製造年,製造番号');
     lines.push(['開放電圧測定器', state.info.devV.name, state.info.devV.year, state.info.devV.serial].map(csvEsc).join(','));
     lines.push(['絶縁抵抗測定器', state.info.devR.name, state.info.devR.year, state.info.devR.serial].map(csvEsc).join(','));
+    lines.push(['接地抵抗測定器', state.info.devG.name, state.info.devG.year, state.info.devG.serial].map(csvEsc).join(','));
+    state.info.otherDevices.forEach(d=>{
+      lines.push([d.label || 'その他測定器', d.name, d.year, d.serial].map(csvEsc).join(','));
+    });
     lines.push('');
     lines.push('【開放電圧測定】');
     lines.push('PCS,No,ストリング名,公称Voc(V),直列枚数,開放電圧(V),入力方式,測定値(V),差異(%),判定,備考');
@@ -1733,7 +1822,12 @@
     const baseName = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr());
     downloadBlob(buildCsvContent(), 'text/csv;charset=utf-8;', '入力値Excelでの編集用', baseName + '.csv');
     downloadBlob(JSON.stringify(state, null, 2), 'application/json', 'バックアップ読み出し用', baseName + '.json');
-    toast('CSVとバックアップを書き出しました（フォルダ分けされます）');
+    if (isGasConfigured() && currentUser){
+      toast('CSVとバックアップを書き出しました。Googleドライブにも保存します…');
+      saveToDrive(false);
+    } else {
+      toast('CSVとバックアップを書き出しました（フォルダ分けされます）');
+    }
   });
 
   document.getElementById('btnJsonImportTrigger').addEventListener('click', ()=>{
@@ -1928,6 +2022,31 @@
   }
   document.getElementById('camStart').addEventListener('click', startCamera);
   document.getElementById('camStop').addEventListener('click', stopCamera);
+  function buildPhotoFileName(){
+    const d = (state.info.date || todayStr()).replace(/[\\/:*?"<>|]/g,'-');
+    const plant = (state.info.plant || '発電所名未設定').replace(/[\\/:*?"<>|]/g,'_');
+    const who = (currentUser || '撮影者未設定').replace(/[\\/:*?"<>|]/g,'_');
+    const now = new Date();
+    const hhmmss = String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
+    return `${d}_${plant}_${who}_${hhmmss}.jpg`;
+  }
+  function uploadPhotoToDrive(dataUrl, fname, btn){
+    if (!isGasConfigured()){ toast('Googleドライブが未設定です'); return; }
+    if (!currentUser){ toast('ログインしてから保存してください'); return; }
+    if (btn) btn.disabled = true;
+    toast('写真をGoogleドライブへ送信中…');
+    fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'savePhoto', userName: currentUser, fileName: fname, imageData: dataUrl})
+    }).then(()=>{
+      toast('Googleドライブに保存しました（' + fname + '）');
+    }).catch(err=>{
+      console.error('photo drive save error', err);
+      toast('写真のドライブ保存に失敗しました');
+    }).finally(()=>{ if (btn) btn.disabled = false; });
+  }
   document.getElementById('camShoot').addEventListener('click', ()=>{
     const video = document.getElementById('toolCameraVideo');
     if (!video.srcObject){ document.getElementById('camStatus').textContent = '先にカメラを起動してください。'; return; }
@@ -1937,9 +2056,17 @@
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const img = document.getElementById('camPreviewImg');
     img.src = dataUrl; img.style.display = 'block';
+    const fname = buildPhotoFileName();
     const dl = document.getElementById('camDownload');
-    dl.href = dataUrl; dl.download = '点検写真_' + Date.now() + '.jpg';
+    dl.href = dataUrl; dl.download = fname;
     dl.style.display = 'inline-flex';
+    const driveBtn = document.getElementById('camDriveSave');
+    if (isGasConfigured()){
+      driveBtn.style.display = 'inline-flex';
+      driveBtn.onclick = ()=> uploadPhotoToDrive(dataUrl, fname, driveBtn);
+    } else {
+      driveBtn.style.display = 'none';
+    }
   });
 
   // --- 角度計 ---
@@ -2011,6 +2138,23 @@
       calcInputDigit(v);
     });
   });
+
+  // ---------- ページ離脱時の警告・自動保存（10分ごと、端末のみ／写真は対象外） ----------
+  function hasUnsavedChanges(){
+    return document.getElementById('saveStatus').textContent === '未保存の変更があります';
+  }
+  window.addEventListener('beforeunload', e=>{
+    if (hasUnsavedChanges()){
+      e.preventDefault();
+      e.returnValue = '入力内容が保存されていません。このページを離れると変更が失われます。';
+      return e.returnValue;
+    }
+  });
+  setInterval(()=>{
+    if (hasUnsavedChanges()){
+      saveCurrent().then(()=>{ toast('自動保存しました（端末）'); });
+    }
+  }, 600000);
 
   // ---------- init ----------
   loadInfoIntoForm();
