@@ -30,7 +30,8 @@
     --shadow:0 1px 2px rgba(30,42,50,.06),0 4px 14px rgba(30,42,50,.05);
   }
   *{box-sizing:border-box;}
-  body{margin:0;}
+  html{overscroll-behavior-y:contain;}
+  body{margin:0;overscroll-behavior-y:contain;}
   #app{
     font-family:'Noto Sans JP',sans-serif;
     background:var(--bg);
@@ -75,7 +76,16 @@
   .btn-amber:hover{background:#c9781f;}
   .btn-ghost{background:transparent;border-color:transparent;color:var(--ink-soft);}
   .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
-  .save-status{font-size:12px;color:var(--ink-soft);margin-left:4px;}
+  .save-status{font-size:12px;color:var(--ink-soft);margin-left:4px;transition:all .15s ease;}
+  .save-status.unsaved{
+    color:#fff;background:var(--ng);padding:6px 12px;border-radius:16px;font-weight:700;
+    font-size:12.5px;box-shadow:0 0 0 3px rgba(193,68,60,.15);
+    animation:pulse-warn 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse-warn{
+    0%,100%{ box-shadow:0 0 0 3px rgba(193,68,60,.15); }
+    50%{ box-shadow:0 0 0 6px rgba(193,68,60,.05); }
+  }
 
   .wrap{max-width:1120px;margin:0 auto;padding:18px 20px 0;}
 
@@ -908,10 +918,16 @@
     if (judge==='ok') inputEl.classList.add('judge-ok');
     else if (judge==='ng') inputEl.classList.add('judge-ng');
   }
-  function markDirty(){ document.getElementById('saveStatus').textContent = '未保存の変更があります'; }
+  function markDirty(){
+    const el = document.getElementById('saveStatus');
+    el.textContent = '⚠ 未保存の変更があります';
+    el.classList.add('unsaved');
+  }
   function markSaved(){
     const t = new Date();
-    document.getElementById('saveStatus').textContent = '保存済み（' + t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) + '）';
+    const el = document.getElementById('saveStatus');
+    el.textContent = '保存済み（' + t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) + '）';
+    el.classList.remove('unsaved');
   }
 
   // ---------- info binding ----------
@@ -1654,7 +1670,7 @@
 
   // ---------- new / save / list / delete ----------
   document.getElementById('btnNew').addEventListener('click', ()=>{
-    if (document.getElementById('saveStatus').textContent === '未保存の変更があります') {
+    if (hasUnsavedChanges()) {
       if (!confirm('未保存の変更があります。新規点検を開始しますか？')) return;
     }
     try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
@@ -2250,7 +2266,7 @@
 
   // ---------- ページ離脱時の警告・自動保存（3分ごと、端末＋ログイン中はGoogleドライブにも／写真は対象外） ----------
   function hasUnsavedChanges(){
-    return document.getElementById('saveStatus').textContent === '未保存の変更があります';
+    return document.getElementById('saveStatus').classList.contains('unsaved');
   }
   window.addEventListener('beforeunload', e=>{
     if (hasUnsavedChanges()){
