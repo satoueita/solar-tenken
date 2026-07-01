@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>太陽光発電所 点検記録</title>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f1ea;
+    --surface:#ffffff;
+    --surface-2:#fbfaf6;
+    --ink:#1e2a32;
+    --ink-soft:#5b6b72;
+    --line:#dcd6c7;
+    --line-strong:#c3bca8;
+    --amber:#e08a2b;
+    --amber-soft:#f6e3c4;
+    --blue:#2b6f8e;
+    --blue-soft:#dce9ee;
+    --ok:#2f7d5c;
+    --ok-soft:#e2efe7;
+    --ng:#c1443c;
+    --ng-soft:#f6dfdd;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(30,42,50,.06),0 4px 14px rgba(30,42,50,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  #app{
+    font-family:'Noto Sans JP',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:0 0 60px;
+  }
+  .display{font-family:'Zen Kaku Gothic New',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .topbar{
+    background:linear-gradient(135deg,#1e2a32 0%,#243944 100%);
+    color:#f3f1ea; padding:22px 20px 20px; position:relative; overflow:hidden;
+  }
+  .topbar::after{
+    content:""; position:absolute; right:-40px; top:-40px;
+    width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle,rgba(224,138,43,.25) 0%,transparent 70%);
+  }
+  .topbar-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+  .gauge-icon{flex:0 0 auto;}
+  .topbar h1{font-size:22px;font-weight:900;margin:0;letter-spacing:.02em;}
+  .topbar p{margin:2px 0 0;font-size:12.5px;color:#c9d6d1;letter-spacing:.02em;}
+
+  .toolbar{
+    max-width:1120px;margin:0 auto;padding:12px 20px 0;
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  }
+  .btn{
+    font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    padding:9px 14px;border-radius:8px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:transform .08s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn:hover{box-shadow:var(--shadow); transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#255f7a;}
+  .btn-amber{background:var(--amber);border-color:var(--amber);color:#fff;}
+  .btn-amber:hover{background:#c9781f;}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--ink-soft);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+  .save-status{font-size:12px;color:var(--ink-soft);margin-left:4px;}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:18px 20px 0;}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;
+  }
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .card-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;}
+  .card-title .num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+    background:var(--ink);color:var(--surface-2);border-radius:5px;padding:2px 6px;
+  }
+  .card-sub{font-size:12px;color:var(--ink-soft);}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr);}}
+  .grid.grid-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:760px){.grid.grid-3{grid-template-columns:1fr;}}
+  .field label{
+    display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:700;letter-spacing:.02em;
+  }
+  .field input, .field select{
+    width:100%;font-family:'Noto Sans JP',sans-serif;font-size:14px;padding:8px 9px;
+    border:1px solid var(--line-strong);border-radius:7px;background:var(--surface-2);color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .cell-input:focus, .pcs-name-input:focus{
+    outline:2px solid var(--blue); outline-offset:1px; background:#fff;
+  }
+
+  .device-section{
+    display:flex;flex-direction:column;gap:16px;margin-top:16px;padding-top:14px;
+    border-top:1px dashed var(--line-strong);
+  }
+  .device-block-title{
+    font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px;letter-spacing:.02em;
+    display:flex;align-items:center;gap:6px;
+  }
+  .device-block-title::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue);}
+
+  .tol-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-bottom:14px;flex-wrap:wrap;}
+  .tol-row input{
+    width:64px;font-family:'JetBrains Mono',monospace;font-size:13px;
+    padding:5px 6px;border:1px solid var(--line-strong);border-radius:6px;text-align:right;
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-size:11px;color:var(--ink-soft);font-weight:700;letter-spacing:.02em;
+    padding:6px 8px;border-bottom:2px solid var(--line-strong);white-space:nowrap;
+  }
+  tbody td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:#fff;}
+  .cell-input{
+    width:100%;min-width:56px;font-size:13px;padding:6px 7px;
+    border:1px solid var(--line-strong);border-radius:6px;background:#fff;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .cell-input.text{font-family:'Noto Sans JP',sans-serif;min-width:100px;}
+  .cell-input.note{min-width:96px;}
+  select.cell-input{font-family:'Noto Sans JP',sans-serif;}
+  .num-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);text-align:center;width:24px;}
+  .calc-col{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);white-space:nowrap;}
+  .badge{
+    display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:700;
+    padding:3px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .badge-ok{background:var(--ok-soft);color:var(--ok);}
+  .badge-ng{background:var(--ng-soft);color:var(--ng);}
+  .badge-na{background:#eee;color:#9a9a9a;}
+  .row-del{
+    border:none;background:transparent;color:#b7b0a0;cursor:pointer;
+    font-size:16px;line-height:1;padding:4px 6px;border-radius:6px;
+  }
+  .row-del:hover{background:var(--ng-soft);color:var(--ng);}
+  .add-row-btn{
+    margin-top:10px;font-size:12.5px;font-weight:700;color:var(--blue);
+    background:var(--blue-soft);border:1px dashed #9fc0cf;padding:8px 12px;border-radius:8px;
+    cursor:pointer;width:100%;
+  }
+  .add-row-btn:hover{background:#cfe4eb;}
+  .add-row-btn.small{width:auto;padding:6px 12px;font-size:12px;margin-top:0;}
+
+  .add-group-btn{
+    margin-top:2px;font-size:13px;font-weight:700;color:#fff;background:var(--blue);
+    border:none;padding:10px 16px;border-radius:8px;cursor:pointer;
+  }
+  .add-group-btn:hover{background:#255f7a;}
+
+  .pcs-panel{border:1px solid var(--line);border-radius:9px;padding:12px 14px 14px;margin-bottom:12px;background:var(--surface-2);}
+  .pcs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .pcs-name-input{
+    font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:14px;
+    border:1px solid var(--line-strong);border-radius:7px;padding:7px 10px;
+    background:#fff;min-width:140px;max-width:280px;flex:1;
+  }
+  .pcs-head-actions{display:flex;align-items:center;gap:8px;}
+  .chip.small{font-size:11px;padding:3px 9px;}
+  .link-tag{font-size:10.5px;color:var(--blue);background:var(--blue-soft);padding:2px 7px;border-radius:10px;white-space:nowrap;}
+
+  .group-tools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+
+  .ocv-cell{display:flex;gap:4px;align-items:center;}
+  .ocv-input{flex:1;min-width:64px;}
+  .ocv-mode-label{font-size:10px;color:var(--ink-soft);margin-top:2px;white-space:nowrap;}
+  .mini-btn{
+    border:1px solid var(--line-strong);background:#fff;color:var(--blue);
+    font-size:10.5px;padding:6px 7px;border-radius:6px;cursor:pointer;white-space:nowrap;
+    font-weight:700;
+  }
+  .mini-btn:hover{background:var(--blue-soft);}
+  .mini-copy{
+    border:1px solid var(--line-strong);background:#fff;color:var(--blue);
+    font-size:10px;padding:6px 6px;border-radius:6px;cursor:pointer;white-space:nowrap;
+  }
+  .mini-copy:hover{background:var(--blue-soft);}
+  .pn-cell{display:flex;gap:4px;align-items:center;}
+
+  .summary-strip{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+  .chip{
+    font-size:12px;color:var(--ink-soft);background:var(--surface-2);
+    border:1px solid var(--line);padding:5px 10px;border-radius:20px;
+  }
+  .chip b{color:var(--ink);font-family:'JetBrains Mono',monospace;}
+  .chip.ok b{color:var(--ok);}
+  .chip.ng b{color:var(--ng);}
+
+  .empty-note{font-size:12.5px;color:var(--ink-soft);padding:10px 4px;text-align:center;}
+
+  .weather-auto-row{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    margin-top:14px;padding-top:12px;border-top:1px dashed var(--line-strong);
+  }
+  .btn-ghost-blue{background:var(--blue-soft);border:1px solid #b7d3dd;color:var(--blue);font-size:12.5px;padding:8px 12px;}
+  .btn-ghost-blue:hover{background:#c9e0e8;}
+  .wa-divider{font-size:12px;color:var(--ink-soft);}
+  .wa-place-input{
+    font-family:'Noto Sans JP',sans-serif;font-size:13px;padding:7px 9px;
+    border:1px solid var(--line-strong);border-radius:7px;background:var(--surface-2);min-width:160px;flex:1;
+  }
+  .wa-status{font-size:12px;color:var(--ink-soft);margin-top:6px;min-height:16px;}
+
+  .footnote{font-size:11.5px;color:var(--ink-soft);line-height:1.7;border-top:1px dashed var(--line-strong);padding-top:10px;margin-top:4px;}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(30,42,50,.45);display:flex;align-items:flex-start;
+    justify-content:center;padding:60px 16px; z-index:50;
+  }
+  .modal{
+    background:#fff;border-radius:12px;max-width:560px;width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);max-height:78vh;display:flex;flex-direction:column;
+  }
+  .modal-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+  .modal-head h3{margin:0;font-size:15px;}
+  .modal-body{overflow-y:auto;padding:6px 10px;}
+  .rec-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 8px;border-bottom:1px solid var(--line);}
+  .rec-item:last-child{border-bottom:none;}
+  .rec-main{cursor:pointer;flex:1;min-width:0;}
+  .rec-main .plant{font-weight:700;font-size:13.5px;}
+  .rec-main .meta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .rec-actions{display:flex;gap:4px;}
+  .icon-btn{border:none;background:transparent;cursor:pointer;color:var(--ink-soft);padding:6px;border-radius:6px;font-size:14px;}
+  .icon-btn:hover{background:var(--surface-2);}
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+    font-size:13px;padding:10px 18px;border-radius:20px;box-shadow:var(--shadow);z-index:99;opacity:0;
+    transition:opacity .25s ease, transform .25s ease;pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+  @media print{
+    .topbar, .toolbar, .add-row-btn, .add-group-btn, .row-del, .btn, .icon-btn, .mini-btn, .mini-copy{display:none !important;}
+    .card{box-shadow:none;border:1px solid #999;}
+    #app{background:#fff;}
+  }
+
+  /* ---------- tools modal ---------- */
+  .tools-modal{max-width:420px;}
+  .tool-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 0;}
+  .tool-tab{
+    font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;
+    border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-soft);
+    padding:7px 10px;border-radius:20px;cursor:pointer;
+  }
+  .tool-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .tools-body{padding:18px 20px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .tool-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+
+  .sw-display{
+    font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;
+    color:var(--ink);letter-spacing:.02em;
+  }
+  .sw-laps{list-style:none;margin:0;padding:0;width:100%;max-height:120px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-soft);}
+  .sw-laps li{padding:4px 8px;border-bottom:1px dashed var(--line);}
+
+  .cam-frame{
+    width:100%;aspect-ratio:4/3;background:#1e2a32;border-radius:10px;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .cam-frame video{width:100%;height:100%;object-fit:cover;}
+  .cam-placeholder{color:#c9d6d1;font-size:12.5px;text-align:center;padding:0 16px;}
+  .cam-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;}
+  .cam-preview-img{max-width:100%;border-radius:8px;border:1px solid var(--line);}
+
+  .angle-visual{display:flex;justify-content:center;}
+  .angle-readout{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+  .calc-wrap{width:100%;}
+  .calc-display{
+    font-family:'JetBrains Mono',monospace;font-size:30px;text-align:right;
+    background:var(--ink);color:#fff;padding:14px 16px;border-radius:8px;margin-bottom:10px;
+    overflow-x:auto;white-space:nowrap;
+  }
+  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .calc-btn{
+    font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;
+    padding:14px 0;border-radius:8px;border:1px solid var(--line-strong);
+    background:var(--surface-2);color:var(--ink);cursor:pointer;
+  }
+  .calc-btn:hover{background:#fff;}
+  .calc-btn.calc-op{background:var(--blue-soft);color:var(--blue);}
+  .calc-btn.calc-op:hover{background:#c9e0e8;}
+  .calc-btn.calc-eq{background:var(--amber);color:#fff;border-color:var(--amber);}
+  .calc-btn.calc-eq:hover{background:#c9781f;}
+
+  /* ---------- login overlay ---------- */
+  .login-overlay{
+    position:fixed;inset:0;background:rgba(30,42,50,.72);z-index:200;
+    display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .login-box{
+    background:#fff;border-radius:14px;padding:28px 24px;width:320px;max-width:92vw;
+    text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);
+  }
+  .login-logo{font-family:'Zen Kaku Gothic New',sans-serif;font-size:15px;font-weight:900;color:var(--ink);line-height:1.5;margin-bottom:16px;}
+  .login-logo span{display:block;font-size:11.5px;color:var(--ink-soft);font-weight:400;margin-top:4px;}
+  .login-input{
+    width:100%;height:42px;border:1px solid var(--line-strong);border-radius:8px;
+    font-size:14px;padding:0 14px;outline:none;margin-bottom:10px;text-align:center;
+    font-family:'Noto Sans JP',sans-serif;background:var(--surface-2);
+  }
+  .login-input:focus{border-color:var(--blue);background:#fff;}
+  .login-btn{
+    width:100%;height:44px;border-radius:8px;border:none;background:var(--blue);
+    color:#fff;font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .login-btn:hover{background:#255f7a;}
+  .login-err{font-size:11.5px;color:var(--ng);min-height:16px;margin-top:8px;}
+  .login-note{font-size:10.5px;color:var(--ink-soft);margin-top:14px;line-height:1.6;}
+
+  .user-bar{
+    background:var(--blue-soft);border-bottom:1px solid #b7d3dd;padding:7px 20px;
+    display:flex;align-items:center;gap:10px;font-size:12px;color:var(--blue);font-weight:700;
+  }
+  .user-bar-inner{max-width:1120px;margin:0 auto;width:100%;display:flex;align-items:center;gap:10px;}
+  .user-bar span.uname{flex:1;}
+  .drive-status{font-size:11px;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
+  .drive-dot{width:7px;height:7px;border-radius:50%;background:#bbb;}
+  .drive-dot.on{background:var(--ok);}
+  .logout-btn{
+    font-size:11.5px;color:var(--ink-soft);cursor:pointer;background:none;
+    border:1px solid var(--line-strong);padding:4px 10px;border-radius:14px;
+  }
+  .logout-btn:hover{background:#fff;}
+
+  /* ---------- history modal tabs ---------- */
+  .hist-tabs{display:flex;gap:6px;padding:10px 16px 0;}
+  .hist-tab{
+    font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;
+    border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-soft);
+    padding:7px 12px;border-radius:20px 20px 0 0;cursor:pointer;
+  }
+  .hist-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .hist-user-row{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);}
+  .hist-user-row input{
+    flex:1;font-size:12px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px;
+    font-family:'Noto Sans JP',sans-serif;
+  }
+</style>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">太陽光発電所 点検記録<br><span>氏名を入力してログインしてください</span></div>
+    <input class="login-input" id="loginUserInput" type="text" placeholder="氏名を入力" autocomplete="name">
+    <button class="login-btn" id="loginBtn">ログイン</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-note">※ 氏名の入力のみです。Googleアカウントへのログインは行いません。<br>保存データの区分けと、Googleドライブ保存先フォルダの識別に使用します。</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <svg class="gauge-icon" width="46" height="46" viewBox="0 0 46 46">
+        <circle cx="23" cy="23" r="20" fill="none" stroke="#3d5462" stroke-width="2"/>
+        <path d="M9 30 A18 18 0 0 1 37 30" fill="none" stroke="#e08a2b" stroke-width="2.5" stroke-linecap="round"/>
+        <g stroke="#c9d6d1" stroke-width="1.4">
+          <line x1="23" y1="6" x2="23" y2="10"/>
+          <line x1="8" y1="23" x2="12" y2="23"/>
+          <line x1="38" y1="23" x2="34" y2="23"/>
+        </g>
+        <line x1="23" y1="23" x2="31" y2="14" stroke="#e08a2b" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="23" cy="23" r="2.6" fill="#e08a2b"/>
+      </svg>
+      <div>
+        <h1 class="display">太陽光発電所 点検記録</h1>
+        <p>開放電圧・絶縁抵抗・接地抵抗測定 &mdash; 現場入力アプリ</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="user-bar">
+    <div class="user-bar-inner">
+      <span class="uname" id="userNameDisp">👤</span>
+      <span class="drive-status"><span class="drive-dot" id="driveDot"></span><span id="driveStatusLabel">Drive未設定</span></span>
+      <button class="logout-btn" id="logoutBtn">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-primary" id="btnNew">＋ 新規点検</button>
+    <button class="btn btn-amber" id="btnSave">端末に保存</button>
+    <button class="btn btn-ghost-blue" id="btnDriveSave">☁️ Driveに保存</button>
+    <button class="btn" id="btnList">📋 履歴から呼び出す</button>
+    <button class="btn" id="btnExportBoth" title="Excel用のCSVと、読み込み直せるバックアップ(.json)を一度に書き出します">書き出し（CSV＋バックアップ）</button>
+    <button class="btn" id="btnJsonImportTrigger" title="書き出したバックアップ(.json)を読み込み、編集を再開します">バックアップ読み込み（.json）</button>
+    <input type="file" id="jsonFileInput" accept="application/json" style="display:none;">
+    <button class="btn" id="btnPrint">🖨 印刷</button>
+    <button class="btn" id="btnTools">🛠 現場ツール</button>
+    <span class="save-status" id="saveStatus"></span>
+  </div>
+
+  <div class="wrap">
+
+    <!-- 基本情報 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="num">INFO</span>基本情報</div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>発電所名</label><input id="f_plant" placeholder="〇〇太陽光発電所"></div>
+        <div class="field"><label>点検日</label><input id="f_date" type="date"></div>
+        <div class="field"><label>点検者</label><input id="f_inspector" placeholder="氏名"></div>
+        <div class="field"><label>天候</label>
+          <select id="f_weather">
+            <option value="">選択してください</option>
+            <option>晴れ</option><option>晴れ時々曇り</option><option>曇り</option>
+            <option>小雨</option><option>雨</option><option>雪</option><option>その他</option>
+          </select>
+        </div>
+        <div class="field"><label>気温（℃）</label><input id="f_temp" type="number" step="0.1" placeholder="例：18.5"></div>
+        <div class="field"><label>湿度（%）</label><input id="f_humidity" type="number" step="1" placeholder="例：55"></div>
+        <div class="field"><label>備考</label><input id="f_memo" placeholder="全体備考"></div>
+      </div>
+
+      <div class="device-section">
+        <div>
+          <div class="device-block-title">開放電圧測定器</div>
+          <div class="grid grid-3">
+            <div class="field"><label>型式・名称</label><input id="f_devV_name" placeholder="例：デジタルマルチメータ ◯◯"></div>
+            <div class="field"><label>製造年</label><input id="f_devV_year" placeholder="例：2022" inputmode="numeric"></div>
+            <div class="field"><label>製造番号</label><input id="f_devV_serial" placeholder="例：SN-12345"></div>
+          </div>
+        </div>
+        <div>
+          <div class="device-block-title">絶縁抵抗測定器</div>
+          <div class="grid grid-3">
+            <div class="field"><label>型式・名称</label><input id="f_devR_name" placeholder="例：絶縁抵抗計（メガー）◯◯"></div>
+            <div class="field"><label>製造年</label><input id="f_devR_year" placeholder="例：2021" inputmode="numeric"></div>
+            <div class="field"><label>製造番号</label><input id="f_devR_serial" placeholder="例：SN-67890"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-auto-row">
+        <button class="btn btn-ghost-blue" id="btnGeoWeather" type="button">📍 現在地から気象データを取得</button>
+        <span class="wa-divider">または</span>
+        <input id="f_placeSearch" class="wa-place-input" placeholder="地名を入力（例：盛岡市）">
+        <button class="btn btn-ghost-blue" id="btnPlaceWeather" type="button">🔍 地名で取得</button>
+      </div>
+      <div class="wa-status" id="waStatus"></div>
+    </div>
+
+    <!-- 開放電圧測定 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="num">01</span>開放電圧測定（Voc）</div>
+        <div class="card-sub">開放電圧は公称Voc×直列枚数で自動計算、または直接手入力に切り替え可能</div>
+      </div>
+      <div class="tol-row">
+        判定許容差：±<input id="tolerance" type="number" step="0.1" value="10">%（開放電圧に対する測定値の乖離）
+      </div>
+      <div id="voltageGroupsWrap"></div>
+      <div class="group-tools">
+        <button class="add-group-btn" id="addVoltageGroup">＋ PCSを追加（絶縁抵抗側にも自動で回路を作成します）</button>
+        <button class="add-group-btn" id="addVoltageGroupNoLink" style="background:var(--ink-soft);">＋ PCSを追加（絶縁抵抗測定側に反映されない）</button>
+      </div>
+      <div class="summary-strip" id="summaryVoltage"></div>
+    </div>
+
+    <!-- 絶縁抵抗測定（直流） -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="num">02</span>絶縁抵抗測定（直流）</div>
+        <div class="card-sub">開放電圧側と同じ回路（PCS・ストリング）が自動で作成されます。絶縁抵抗のみ測定する回路は手動で追加できます</div>
+      </div>
+      <div id="insulationGroupsWrap"></div>
+      <button class="add-group-btn" id="addInsulationGroup">＋ PCSを手動で追加（開放電圧測定なしのケース用）</button>
+      <div class="summary-strip" id="summaryInsulation"></div>
+      <div class="footnote">
+        ※ 判定基準値・試験電圧は目安です。回路の使用電圧区分や社内基準、電気設備技術基準の解釈等に基づき、現場の基準値をご確認のうえ入力してください。
+      </div>
+    </div>
+
+    <!-- 絶縁抵抗測定（交流） -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="num">03</span>絶縁抵抗測定（交流）</div>
+        <div class="card-sub">交流機器・配線等。PCSとの連動はなく、すべて手入力です</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="tblInsulationAc">
+          <thead>
+            <tr>
+              <th style="width:24px;">No</th>
+              <th style="min-width:110px;">測定箇所</th>
+              <th style="width:76px;">試験電圧</th>
+              <th style="width:88px;">判定基準<br>(MΩ)</th>
+              <th style="width:88px;">測定値<br>(MΩ)</th>
+              <th style="width:60px;">判定</th>
+              <th style="min-width:96px;">備考</th>
+              <th style="width:28px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbodyInsulationAc"></tbody>
+        </table>
+        <div class="empty-note" id="emptyInsulationAc" style="display:none;">行がありません。「行を追加」から入力してください。</div>
+      </div>
+      <button class="add-row-btn" id="addInsulationAcRow">＋ 測定箇所を追加</button>
+      <div class="summary-strip" id="summaryInsulationAc"></div>
+    </div>
+
+    <!-- 接地抵抗測定 -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="num">04</span>接地抵抗測定</div>
+        <div class="card-sub">箇所種別・接地極種別を選択、詳細名称は自由入力できます</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="tblGrounding">
+          <thead>
+            <tr>
+              <th style="width:24px;">No</th>
+              <th style="width:96px;">箇所種別</th>
+              <th style="min-width:110px;">詳細名称</th>
+              <th style="width:84px;">接地極種別</th>
+              <th style="width:88px;">判定基準<br>(Ω)</th>
+              <th style="width:88px;">測定値<br>(Ω)</th>
+              <th style="width:60px;">判定</th>
+              <th style="min-width:96px;">備考</th>
+              <th style="width:28px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbodyGrounding"></tbody>
+        </table>
+        <div class="empty-note" id="emptyGrounding" style="display:none;">行がありません。「行を追加」から入力してください。</div>
+      </div>
+      <button class="add-row-btn" id="addGroundingRow">＋ 測定箇所を追加</button>
+      <div class="summary-strip" id="summaryGrounding"></div>
+      <div class="footnote">
+        ※ 判定基準は目安です（A種・C種＝10Ω以下、D種＝100Ω以下を初期値としています／B種は設備条件により個別計算が必要なため空欄です）。実際の接地工事の種類・回路条件に応じて必ずご確認ください。
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-backdrop" id="toolsBackdrop" style="display:none;">
+  <div class="modal tools-modal">
+    <div class="modal-head">
+      <h3 class="display">現場ツール</h3>
+      <button class="icon-btn" id="toolsClose">✕</button>
+    </div>
+    <div class="tool-tabs">
+      <button class="tool-tab active" data-tool="stopwatch">⏱ ストップウォッチ</button>
+      <button class="tool-tab" data-tool="camera">📷 カメラ</button>
+      <button class="tool-tab" data-tool="angle">📐 角度計</button>
+      <button class="tool-tab" data-tool="calc">🧮 電卓</button>
+    </div>
+    <div class="modal-body tools-body">
+
+      <div class="tool-pane" id="pane-stopwatch">
+        <div class="sw-display" id="swDisplay">00:00.00</div>
+        <div class="tool-btn-row">
+          <button class="btn btn-primary" id="swStartStop">開始</button>
+          <button class="btn" id="swLap">ラップ</button>
+          <button class="btn" id="swReset">リセット</button>
+        </div>
+        <ul class="sw-laps" id="swLaps"></ul>
+      </div>
+
+      <div class="tool-pane" id="pane-camera" style="display:none;">
+        <div class="cam-frame">
+          <video id="toolCameraVideo" playsinline autoplay muted style="display:none;"></video>
+          <div class="cam-placeholder" id="camPlaceholder">「カメラ起動」を押してください</div>
+          <canvas id="toolCameraCanvas" style="display:none;"></canvas>
+        </div>
+        <div class="tool-btn-row">
+          <button class="btn btn-primary" id="camStart">カメラ起動</button>
+          <button class="btn" id="camShoot">撮影</button>
+          <button class="btn" id="camStop">停止</button>
+        </div>
+        <div class="wa-status" id="camStatus"></div>
+        <div class="cam-preview-wrap">
+          <img id="camPreviewImg" class="cam-preview-img" style="display:none;">
+          <a id="camDownload" class="btn btn-amber" style="display:none;">写真を保存</a>
+        </div>
+      </div>
+
+      <div class="tool-pane" id="pane-angle" style="display:none;">
+        <div class="angle-visual">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="64" fill="none" stroke="#c3bca8" stroke-width="2"/>
+            <line x1="70" y1="70" x2="70" y2="14" id="angleNeedle" stroke="#e08a2b" stroke-width="3" stroke-linecap="round" style="transform-origin:70px 70px;"/>
+            <circle cx="70" cy="70" r="3" fill="#1e2a32"/>
+          </svg>
+        </div>
+        <div class="angle-readout">
+          <div class="chip">左右傾斜（gamma） <b id="angleGamma">—</b></div>
+          <div class="chip">前後傾斜（beta） <b id="angleBeta">—</b></div>
+        </div>
+        <div class="tool-btn-row">
+          <button class="btn btn-primary" id="angleRequest">センサーを開始</button>
+        </div>
+        <div class="wa-status" id="angleStatus"></div>
+      </div>
+
+      <div class="tool-pane" id="pane-calc" style="display:none;">
+        <div class="calc-wrap">
+          <div class="calc-display" id="calcDisplay">0</div>
+          <div class="calc-grid">
+            <button class="calc-btn calc-op" data-calc="C">C</button>
+            <button class="calc-btn" data-calc="7">7</button>
+            <button class="calc-btn" data-calc="8">8</button>
+            <button class="calc-btn" data-calc="9">9</button>
+            <button class="calc-btn calc-op" data-calc="÷">÷</button>
+            <button class="calc-btn" data-calc="4">4</button>
+            <button class="calc-btn" data-calc="5">5</button>
+            <button class="calc-btn" data-calc="6">6</button>
+            <button class="calc-btn calc-op" data-calc="×">×</button>
+            <button class="calc-btn" data-calc="1">1</button>
+            <button class="calc-btn" data-calc="2">2</button>
+            <button class="calc-btn" data-calc="3">3</button>
+            <button class="calc-btn calc-op" data-calc="-">−</button>
+            <button class="calc-btn" data-calc="0">0</button>
+            <button class="calc-btn" data-calc=".">.</button>
+            <button class="calc-btn calc-eq" data-calc="=">=</button>
+            <button class="calc-btn calc-op" data-calc="+">＋</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  const uid = () => 'r' + Math.random().toString(36).slice(2, 10);
+  const todayStr = () => new Date().toISOString().slice(0,10);
+
+  // ============================================================
+  // Googleドライブ連携（Google Apps Script WebApp 経由・要デプロイ）
+  // デプロイ後のウェブアプリURLをここに貼り付けてください。
+  // 未設定のままでも「端末に保存」「JSON書き出し」は通常どおり使えます。
+  // ============================================================
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbySZF7rKTvHANurwLNieqag-NBPH_uLNhDMkNRa4_LQn2urXcsizlBjQheJhdarnPT4qg/exec';
+  function isGasConfigured(){ return GAS_URL.indexOf('YOUR_SCRIPT_ID') < 0; }
+
+  let currentUser = '';
+
+  function saveUserSession(name){ try{ sessionStorage.setItem('inspection_user', name); }catch(e){} }
+  function loadUserSession(){ try{ return sessionStorage.getItem('inspection_user') || ''; }catch(e){ return ''; } }
+  function clearUserSession(){ try{ sessionStorage.removeItem('inspection_user'); }catch(e){} }
+
+  function updateDriveStatusUI(){
+    const dot = document.getElementById('driveDot');
+    const lbl = document.getElementById('driveStatusLabel');
+    if (!dot || !lbl) return;
+    if (isGasConfigured()){ dot.classList.add('on'); lbl.textContent = 'Drive設定済み'; }
+    else { dot.classList.remove('on'); lbl.textContent = 'Drive未設定'; }
+  }
+
+  function doLogin(){
+    const nameInput = document.getElementById('loginUserInput');
+    const errEl = document.getElementById('loginErr');
+    const name = nameInput.value.trim();
+    if (!name){ errEl.textContent = '氏名を入力してください'; return; }
+    errEl.textContent = '確認中…';
+    if (!isGasConfigured()){
+      errEl.textContent = '';
+      setTimeout(()=>loginSuccess(name), 250);
+      return;
+    }
+    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name))
+      .then(r=>r.json())
+      .then(j=>{
+        if (j.ok) loginSuccess(name);
+        else errEl.textContent = 'このユーザー名は許可されていません';
+      })
+      .catch(err=>{
+        console.warn('auth error', err);
+        errEl.textContent = '通信エラーのため、そのままログインします…';
+        setTimeout(()=>loginSuccess(name), 800);
+      });
+  }
+  function loginSuccess(name){
+    currentUser = name;
+    saveUserSession(name);
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('userNameDisp').textContent = '👤 ' + name;
+    updateDriveStatusUI();
+  }
+  function doLogout(){
+    if (!confirm('ログアウトしますか？')) return;
+    clearUserSession();
+    location.reload();
+  }
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('loginUserInput').addEventListener('keydown', e=>{ if (e.key==='Enter') doLogin(); });
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+
+  // ---------- factory helpers ----------
+  function newVoltageRow(name){ return {id:uid(), name:(name!==undefined?name:''), voc:'', count:'', ocv:'', autoOcv:true, measured:'', note:''}; }
+  function newVoltageGroup(name){ return {id:uid(), pcsName:name||'', rows:[newVoltageRow('1')], linkedInsulationGroupId:null}; }
+
+  function newInsulationRow(linkedVoltageRowId, location, voltage){
+    return {id:uid(), location:location||'', voltage:voltage||'500V', criterion:'1.0', measuredP:'', measuredN:'', note:'', linkedVoltageRowId:linkedVoltageRowId||null};
+  }
+  function newInsulationGroup(name){ return {id:uid(), pcsName:name||'', rows:[newInsulationRow(null,'1')], linkedVoltageGroupId:null}; }
+
+  function defaultGroundingCriterion(type){
+    if (type==='A種') return '10';
+    if (type==='C種') return '10';
+    if (type==='D種') return '100';
+    return ''; // B種は個別計算のため空欄
+  }
+  function newInsulationAcRow(idx){
+    return {id:uid(), location:(idx!==undefined?String(idx):''), voltage:'500V', criterion:'1.0', measured:'', note:''};
+  }
+
+  function newGroundingRow(){
+    return {id:uid(), category:'パネル', label:'', electrodeType:'D種', criterion:defaultGroundingCriterion('D種'), measured:'', note:''};
+  }
+
+  function suggestTestVoltage(maxOcv){
+    if (!isFinite(maxOcv)) return '500V';
+    if (maxOcv >= 750) return '1000V';
+    if (maxOcv >= 300) return '500V';
+    return '250V';
+  }
+  function maxOcvInGroup(vGroup){
+    let max = -Infinity;
+    (vGroup.rows||[]).forEach(r=>{ const v = parseFloat(r.ocv); if (isFinite(v) && v>max) max=v; });
+    return max === -Infinity ? NaN : max;
+  }
+  function createLinkedInsulationGroup(vGroup){
+    const testV = suggestTestVoltage(maxOcvInGroup(vGroup));
+    const ig = {
+      id: uid(), pcsName: vGroup.pcsName,
+      rows: vGroup.rows.map(vr => newInsulationRow(vr.id, vr.name, testV)),
+      linkedVoltageGroupId: vGroup.id
+    };
+    vGroup.linkedInsulationGroupId = ig.id;
+    return ig;
+  }
+
+  function blankState(){
+    const vg = newVoltageGroup('PCS1');
+    const ig = createLinkedInsulationGroup(vg);
+    return {
+      id: uid(),
+      info: {
+        plant:'', date: todayStr(), inspector:'', weather:'', temp:'', humidity:'', memo:'',
+        devV: {name:'', year:'', serial:''},
+        devR: {name:'', year:'', serial:''}
+      },
+      tolerance: 10,
+      voltageGroups: [vg],
+      insulationGroups: [ig],
+      insulationAcRows: [newInsulationAcRow(1)],
+      groundingRows: [newGroundingRow()],
+      updatedAt: null
+    };
+  }
+
+  function normalizeState(s){
+    s.info = s.info || {};
+    if (!s.info.devV) s.info.devV = {name:'',year:'',serial:''};
+    if (!s.info.devR) s.info.devR = {name:'',year:'',serial:''};
+    if (s.info.humidity === undefined) s.info.humidity = '';
+    s.tolerance = (s.tolerance === undefined) ? 10 : s.tolerance;
+    s.voltageGroups = (s.voltageGroups || []).map(g => ({
+      id: g.id || uid(), pcsName: g.pcsName || '', linkedInsulationGroupId: g.linkedInsulationGroupId || null,
+      rows: (g.rows || []).map(r => ({
+        id: r.id || uid(), name: r.name || '', voc: r.voc || '', count: r.count || '',
+        ocv: (r.ocv !== undefined) ? r.ocv : '', autoOcv: (r.autoOcv !== undefined) ? r.autoOcv : true,
+        measured: r.measured || '', note: r.note || ''
+      }))
+    }));
+    s.insulationGroups = (s.insulationGroups || []).map(g => ({
+      id: g.id || uid(), pcsName: g.pcsName || '', linkedVoltageGroupId: g.linkedVoltageGroupId || null,
+      rows: (g.rows || []).map(r => ({
+        id: r.id || uid(), location: r.location || '', voltage: r.voltage || '500V',
+        criterion: (r.criterion !== undefined) ? r.criterion : '1.0',
+        measuredP: (r.measuredP !== undefined) ? r.measuredP : (r.measured || ''),
+        measuredN: (r.measuredN !== undefined) ? r.measuredN : '',
+        note: r.note || '', linkedVoltageRowId: r.linkedVoltageRowId || null
+      }))
+    }));
+    s.insulationAcRows = (s.insulationAcRows || []).map(r => ({
+      id: r.id || uid(), location: r.location || '', voltage: r.voltage || '500V',
+      criterion: (r.criterion !== undefined) ? r.criterion : '1.0',
+      measured: r.measured || '', note: r.note || ''
+    }));
+    s.groundingRows = (s.groundingRows || []).map(r => ({
+      id: r.id || uid(), category: r.category || 'パネル', label: r.label || '',
+      electrodeType: r.electrodeType || 'D種',
+      criterion: (r.criterion !== undefined) ? r.criterion : defaultGroundingCriterion(r.electrodeType || 'D種'),
+      measured: r.measured || '', note: r.note || ''
+    }));
+    if (!s.groundingRows.length) s.groundingRows = [newGroundingRow()];
+    return s;
+  }
+
+  let state = blankState();
+  let listCache = [];
+
+  // ---------- toast ----------
+  let toastTimer;
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>el.classList.remove('show'), 2400);
+  }
+  function esc(v){ if (v===undefined || v===null) return ''; return String(v).replace(/"/g,'&quot;'); }
+  function badge(judge){
+    if (judge==='ok') return '<span class="badge badge-ok">OK</span>';
+    if (judge==='ng') return '<span class="badge badge-ng">NG</span>';
+    return '<span class="badge badge-na">—</span>';
+  }
+  function markDirty(){ document.getElementById('saveStatus').textContent = '未保存の変更があります'; }
+  function markSaved(){
+    const t = new Date();
+    document.getElementById('saveStatus').textContent = '保存済み（' + t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) + '）';
+  }
+
+  // ---------- info binding ----------
+  const infoFields = ['plant','date','inspector','weather','temp','humidity','memo'];
+  infoFields.forEach(key=>{
+    document.getElementById('f_'+key).addEventListener('input', e=>{ state.info[key] = e.target.value; markDirty(); });
+  });
+  const deviceSubFields = ['name','year','serial'];
+  ['devV','devR'].forEach(dev=>{
+    deviceSubFields.forEach(f=>{
+      document.getElementById('f_'+dev+'_'+f).addEventListener('input', e=>{ state.info[dev][f] = e.target.value; markDirty(); });
+    });
+  });
+  document.getElementById('tolerance').addEventListener('input', e=>{
+    state.tolerance = parseFloat(e.target.value) || 0;
+    renderVoltageGroups();
+  });
+
+  function loadInfoIntoForm(){
+    infoFields.forEach(key=>{ document.getElementById('f_'+key).value = state.info[key] || ''; });
+    ['devV','devR'].forEach(dev=>{
+      deviceSubFields.forEach(f=>{ document.getElementById('f_'+dev+'_'+f).value = (state.info[dev] && state.info[dev][f]) || ''; });
+    });
+    document.getElementById('tolerance').value = state.tolerance;
+  }
+
+  // ================= 開放電圧測定 =================
+  function calcVoltageRow(row){
+    const voc = parseFloat(row.voc), n = parseFloat(row.count);
+    const autoCalc = (isFinite(voc) && isFinite(n)) ? voc*n : null;
+    const ocv = parseFloat(row.ocv), measured = parseFloat(row.measured);
+    let diff = null, judge = 'na';
+    if (isFinite(ocv) && ocv !== 0 && isFinite(measured)) {
+      diff = (measured - ocv) / ocv * 100;
+      judge = Math.abs(diff) <= (state.tolerance || 0) ? 'ok' : 'ng';
+    }
+    return {autoCalc, diff, judge};
+  }
+  function recalcOcvFromVocCount(row){
+    const voc = parseFloat(row.voc), n = parseFloat(row.count);
+    const calc = (isFinite(voc) && isFinite(n)) ? voc*n : null;
+    row.ocv = calc !== null ? String(Math.round(calc*10)/10) : '';
+  }
+
+  function renderVoltageGroups(){
+    const wrap = document.getElementById('voltageGroupsWrap');
+    wrap.innerHTML = '';
+    if (!state.voltageGroups.length){
+      wrap.innerHTML = '<div class="empty-note">PCSグループがありません。「PCSを追加」から開始してください。</div>';
+    }
+    state.voltageGroups.forEach(g=>{
+      const panel = document.createElement('div');
+      panel.className = 'pcs-panel';
+      const rowsHtml = g.rows.map((row, idx)=>{
+        const {diff, judge} = calcVoltageRow(row);
+        return `
+          <tr>
+            <td class="num-col">${idx+1}</td>
+            <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="name" value="${esc(row.name)}" placeholder="例：ストリング1"></td>
+            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voc" value="${esc(row.voc)}" placeholder="例：40.0" inputmode="decimal"></td>
+            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="count" value="${esc(row.count)}" placeholder="例：20" inputmode="numeric"></td>
+            <td>
+              <div class="ocv-cell">
+                <input class="cell-input ocv-input" id="ocvfield-${row.id}" data-group="${g.id}" data-id="${row.id}" data-f="ocv" value="${esc(row.ocv)}" placeholder="開放電圧" inputmode="decimal">
+                <button class="mini-btn" data-autoreset="${row.id}" data-group="${g.id}" title="公称Voc×直列枚数で自動計算に戻す">⟲自動</button>
+              </div>
+              <div class="ocv-mode-label" id="ocvlabel-${row.id}">${row.autoOcv ? '自動計算' : '手入力'}</div>
+            </td>
+            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
+            <td class="calc-col" id="diff-${row.id}">${diff!==null ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—'}</td>
+            <td id="judge-${row.id}">${badge(judge)}</td>
+            <td><input class="cell-input note text" data-group="${g.id}" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
+            <td><button class="row-del" data-group="${g.id}" data-delrow="${row.id}" title="削除">✕</button></td>
+          </tr>`;
+      }).join('');
+      panel.innerHTML = `
+        <div class="pcs-head">
+          <input class="pcs-name-input" data-group="${g.id}" value="${esc(g.pcsName)}" placeholder="PCS名（例：PCS1）">
+          <div class="pcs-head-actions">
+            <span class="chip small">${g.rows.length}件</span>
+            ${g.linkedInsulationGroupId ? '<span class="link-tag">絶縁抵抗と連動</span>' : ''}
+            <button class="icon-btn" data-delgroup="${g.id}" title="このPCSグループを削除">🗑</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th style="width:24px;">No</th>
+              <th style="min-width:96px;">ストリング名</th>
+              <th style="width:88px;">公称Voc (V)</th>
+              <th style="width:70px;">直列枚数</th>
+              <th style="width:130px;">開放電圧 (V)</th>
+              <th style="width:90px;">測定値 (V)</th>
+              <th style="width:72px;">差異 (%)</th>
+              <th style="width:56px;">判定</th>
+              <th style="min-width:90px;">備考</th>
+              <th style="width:26px;"></th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+        ${g.rows.length===0 ? '<div class="empty-note">ストリングがありません。</div>' : ''}
+        <button class="add-row-btn small" data-addrow="${g.id}">＋ ストリングを追加</button>
+      `;
+      wrap.appendChild(panel);
+    });
+    updateVoltageSummary();
+  }
+
+  function updateVoltageSummary(){
+    let total=0, ok=0, ng=0, na=0;
+    state.voltageGroups.forEach(g=> g.rows.forEach(r=>{
+      total++;
+      const j = calcVoltageRow(r).judge;
+      if (j==='ok') ok++; else if (j==='ng') ng++; else na++;
+    }));
+    const el = document.getElementById('summaryVoltage');
+    el.innerHTML = total ? `
+      <span class="chip">合計 <b>${total}</b> 件（${state.voltageGroups.length} PCS）</span>
+      <span class="chip ok">OK <b>${ok}</b></span>
+      <span class="chip ng">NG <b>${ng}</b></span>
+      <span class="chip">未入力 <b>${na}</b></span>
+    ` : '';
+  }
+
+  const voltageWrap = document.getElementById('voltageGroupsWrap');
+  voltageWrap.addEventListener('input', e=>{
+    const t = e.target;
+    if (t.matches('.pcs-name-input')){
+      const g = state.voltageGroups.find(x=>x.id===t.getAttribute('data-group'));
+      if (g) { g.pcsName = t.value; markDirty(); }
+      return;
+    }
+    if (t.matches('[data-f]')){
+      const gid = t.getAttribute('data-group'), rid = t.getAttribute('data-id'), f = t.getAttribute('data-f');
+      const g = state.voltageGroups.find(x=>x.id===gid);
+      const row = g && g.rows.find(r=>r.id===rid);
+      if (!row) return;
+      row[f] = t.value;
+      markDirty();
+
+      if (f === 'voc' || f === 'count'){
+        if (row.autoOcv){
+          recalcOcvFromVocCount(row);
+          const ocvEl = document.getElementById('ocvfield-'+rid); if (ocvEl) ocvEl.value = row.ocv;
+        }
+      }
+      if (f === 'ocv'){
+        row.autoOcv = false;
+        const lbl = document.getElementById('ocvlabel-'+rid); if (lbl) lbl.textContent = '手入力';
+      }
+      if (f === 'name'){
+        const ig = state.insulationGroups.find(x=>x.id===g.linkedInsulationGroupId);
+        if (ig){
+          const linkedRow = ig.rows.find(r=>r.linkedVoltageRowId===rid);
+          if (linkedRow){ linkedRow.location = row.name; renderInsulationGroups(); }
+        }
+      }
+
+      const {diff, judge} = calcVoltageRow(row);
+      const d = document.getElementById('diff-'+rid); if (d) d.textContent = diff!==null ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—';
+      const j = document.getElementById('judge-'+rid); if (j) j.innerHTML = badge(judge);
+      updateVoltageSummary();
+    }
+  });
+  voltageWrap.addEventListener('click', e=>{
+    const autoBtn = e.target.closest('[data-autoreset]');
+    if (autoBtn){
+      const gid = autoBtn.getAttribute('data-group'), rid = autoBtn.getAttribute('data-autoreset');
+      const g = state.voltageGroups.find(x=>x.id===gid);
+      const row = g && g.rows.find(r=>r.id===rid);
+      if (row){
+        row.autoOcv = true;
+        recalcOcvFromVocCount(row);
+        markDirty();
+        renderVoltageGroups();
+      }
+      return;
+    }
+    const delrow = e.target.closest('[data-delrow]');
+    if (delrow){
+      const gid = delrow.getAttribute('data-group'), rid = delrow.getAttribute('data-delrow');
+      const g = state.voltageGroups.find(x=>x.id===gid);
+      if (g){ g.rows = g.rows.filter(r=>r.id!==rid); markDirty(); renderVoltageGroups(); }
+      return;
+    }
+    const delgroup = e.target.closest('[data-delgroup]');
+    if (delgroup){
+      const gid = delgroup.getAttribute('data-delgroup');
+      if (!confirm('このPCSグループを削除しますか？含まれる測定データも削除されます（連動する絶縁抵抗側のデータは残ります）。')) return;
+      state.voltageGroups = state.voltageGroups.filter(g=>g.id!==gid);
+      markDirty(); renderVoltageGroups();
+      return;
+    }
+    const addrow = e.target.closest('[data-addrow]');
+    if (addrow){
+      const gid = addrow.getAttribute('data-addrow');
+      const g = state.voltageGroups.find(x=>x.id===gid);
+      if (g){
+        const newRow = newVoltageRow(String(g.rows.length+1));
+        const prev = g.rows[g.rows.length-1];
+        if (prev){
+          newRow.voc = prev.voc;
+          newRow.count = prev.count;
+          newRow.ocv = prev.ocv;
+          newRow.autoOcv = prev.autoOcv;
+        }
+        g.rows.push(newRow);
+        const ig = state.insulationGroups.find(x=>x.id===g.linkedInsulationGroupId);
+        if (ig){
+          const testV = suggestTestVoltage(maxOcvInGroup(g));
+          ig.rows.push(newInsulationRow(newRow.id, newRow.name, testV));
+        }
+        markDirty();
+        renderVoltageGroups();
+        renderInsulationGroups();
+      }
+    }
+  });
+  document.getElementById('addVoltageGroup').addEventListener('click', ()=>{
+    const g = newVoltageGroup('PCS'+(state.voltageGroups.length+1));
+    state.voltageGroups.push(g);
+    const ig = createLinkedInsulationGroup(g);
+    state.insulationGroups.push(ig);
+    markDirty();
+    renderVoltageGroups();
+    renderInsulationGroups();
+    toast('PCSを追加し、絶縁抵抗側にも対応する回路を作成しました');
+  });
+  document.getElementById('addVoltageGroupNoLink').addEventListener('click', ()=>{
+    const g = newVoltageGroup('PCS'+(state.voltageGroups.length+1));
+    state.voltageGroups.push(g);
+    markDirty();
+    renderVoltageGroups();
+    toast('PCSを追加しました（絶縁抵抗側には反映されません）');
+  });
+
+  // ================= 絶縁抵抗測定 =================
+  function calcInsulationRow(row){
+    const criterion = parseFloat(row.criterion);
+    const mp = parseFloat(row.measuredP), mn = parseFloat(row.measuredN);
+    let judgeP = 'na', judgeN = 'na';
+    if (isFinite(criterion) && isFinite(mp)) judgeP = mp >= criterion ? 'ok' : 'ng';
+    if (isFinite(criterion) && isFinite(mn)) judgeN = mn >= criterion ? 'ok' : 'ng';
+    return {judgeP, judgeN};
+  }
+
+  function renderInsulationGroups(){
+    const wrap = document.getElementById('insulationGroupsWrap');
+    wrap.innerHTML = '';
+    if (!state.insulationGroups.length){
+      wrap.innerHTML = '<div class="empty-note">PCSグループがありません。「PCSを追加」から開始してください。</div>';
+    }
+    state.insulationGroups.forEach(g=>{
+      const panel = document.createElement('div');
+      panel.className = 'pcs-panel';
+      const rowsHtml = g.rows.map((row, idx)=>{
+        const {judgeP, judgeN} = calcInsulationRow(row);
+        return `
+          <tr>
+            <td class="num-col">${idx+1}</td>
+            <td><input class="cell-input text" data-group="${g.id}" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：PCS1 直流入力"></td>
+            <td>
+              <select class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="voltage">
+                ${['250V','500V','1000V'].map(v=>`<option ${row.voltage===v?'selected':''}>${v}</option>`).join('')}
+              </select>
+            </td>
+            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：1.0" inputmode="decimal"></td>
+            <td><input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measuredP" value="${esc(row.measuredP)}" placeholder="P側" inputmode="decimal"></td>
+            <td id="judge-p-${row.id}">${badge(judgeP)}</td>
+            <td>
+              <div class="pn-cell">
+                <input class="cell-input" data-group="${g.id}" data-id="${row.id}" data-f="measuredN" value="${esc(row.measuredN)}" placeholder="N側" inputmode="decimal">
+                <button class="mini-copy" data-copypn="${row.id}" data-group="${g.id}" title="P側の値をN側にコピー">P→N</button>
+              </div>
+            </td>
+            <td id="judge-n-${row.id}">${badge(judgeN)}</td>
+            <td><input class="cell-input note text" data-group="${g.id}" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
+            <td><button class="row-del" data-group="${g.id}" data-delrow="${row.id}" title="削除">✕</button></td>
+          </tr>`;
+      }).join('');
+      panel.innerHTML = `
+        <div class="pcs-head">
+          <input class="pcs-name-input" data-group="${g.id}" value="${esc(g.pcsName)}" placeholder="PCS名（例：PCS1）">
+          <div class="pcs-head-actions">
+            <span class="chip small">${g.rows.length}件</span>
+            ${g.linkedVoltageGroupId ? '<span class="link-tag">開放電圧と連動</span>' : '<span class="link-tag" style="color:#9a9a9a;background:#eee;">単独入力</span>'}
+            <button class="icon-btn" data-delgroup="${g.id}" title="このPCSグループを削除">🗑</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th style="width:24px;">No</th>
+              <th style="min-width:96px;">測定箇所</th>
+              <th style="width:76px;">試験電圧</th>
+              <th style="width:84px;">判定基準<br>(MΩ)</th>
+              <th style="width:84px;">P側 測定値<br>(MΩ)</th>
+              <th style="width:52px;">P判定</th>
+              <th style="width:120px;">N側 測定値<br>(MΩ)</th>
+              <th style="width:52px;">N判定</th>
+              <th style="min-width:90px;">備考</th>
+              <th style="width:26px;"></th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+        ${g.rows.length===0 ? '<div class="empty-note">測定箇所がありません。</div>' : ''}
+        <div class="group-tools">
+          <button class="add-row-btn small" data-addrow="${g.id}">＋ 測定箇所を追加</button>
+          <button class="mini-btn" data-recalcvoltage="${g.id}" title="連動する開放電圧の最大値から試験電圧を自動設定">⚡ 試験電圧を自動設定</button>
+        </div>
+      `;
+      wrap.appendChild(panel);
+    });
+    updateInsulationSummary();
+  }
+
+  function updateInsulationSummary(){
+    let total=0, okP=0, ngP=0, okN=0, ngN=0;
+    state.insulationGroups.forEach(g=> g.rows.forEach(r=>{
+      total++;
+      const {judgeP, judgeN} = calcInsulationRow(r);
+      if (judgeP==='ok') okP++; else if (judgeP==='ng') ngP++;
+      if (judgeN==='ok') okN++; else if (judgeN==='ng') ngN++;
+    }));
+    const el = document.getElementById('summaryInsulation');
+    el.innerHTML = total ? `
+      <span class="chip">合計 <b>${total}</b> 件（${state.insulationGroups.length} PCS）</span>
+      <span class="chip ok">P側OK <b>${okP}</b></span>
+      <span class="chip ng">P側NG <b>${ngP}</b></span>
+      <span class="chip ok">N側OK <b>${okN}</b></span>
+      <span class="chip ng">N側NG <b>${ngN}</b></span>
+    ` : '';
+  }
+
+  const insulationWrap = document.getElementById('insulationGroupsWrap');
+  insulationWrap.addEventListener('input', e=>{
+    const t = e.target;
+    if (t.matches('.pcs-name-input')){
+      const g = state.insulationGroups.find(x=>x.id===t.getAttribute('data-group'));
+      if (g) { g.pcsName = t.value; markDirty(); }
+      return;
+    }
+    if (t.matches('[data-f]')){
+      const gid = t.getAttribute('data-group'), rid = t.getAttribute('data-id'), f = t.getAttribute('data-f');
+      const g = state.insulationGroups.find(x=>x.id===gid);
+      const row = g && g.rows.find(r=>r.id===rid);
+      if (!row) return;
+      row[f] = t.value;
+      markDirty();
+      const {judgeP, judgeN} = calcInsulationRow(row);
+      const jp = document.getElementById('judge-p-'+rid); if (jp) jp.innerHTML = badge(judgeP);
+      const jn = document.getElementById('judge-n-'+rid); if (jn) jn.innerHTML = badge(judgeN);
+      updateInsulationSummary();
+    }
+  });
+  insulationWrap.addEventListener('click', e=>{
+    const copyBtn = e.target.closest('[data-copypn]');
+    if (copyBtn){
+      const gid = copyBtn.getAttribute('data-group'), rid = copyBtn.getAttribute('data-copypn');
+      const g = state.insulationGroups.find(x=>x.id===gid);
+      const row = g && g.rows.find(r=>r.id===rid);
+      if (row){ row.measuredN = row.measuredP; markDirty(); renderInsulationGroups(); }
+      return;
+    }
+    const recalcBtn = e.target.closest('[data-recalcvoltage]');
+    if (recalcBtn){
+      const gid = recalcBtn.getAttribute('data-recalcvoltage');
+      const ig = state.insulationGroups.find(x=>x.id===gid);
+      if (!ig) return;
+      let suggested = '500V';
+      if (ig.linkedVoltageGroupId){
+        const vg = state.voltageGroups.find(x=>x.id===ig.linkedVoltageGroupId);
+        if (vg) suggested = suggestTestVoltage(maxOcvInGroup(vg));
+      } else {
+        toast('連動する開放電圧データがないため既定値 500V を設定しました');
+      }
+      ig.rows.forEach(r=> r.voltage = suggested);
+      markDirty(); renderInsulationGroups();
+      return;
+    }
+    const delrow = e.target.closest('[data-delrow]');
+    if (delrow){
+      const gid = delrow.getAttribute('data-group'), rid = delrow.getAttribute('data-delrow');
+      const g = state.insulationGroups.find(x=>x.id===gid);
+      if (g){ g.rows = g.rows.filter(r=>r.id!==rid); markDirty(); renderInsulationGroups(); }
+      return;
+    }
+    const delgroup = e.target.closest('[data-delgroup]');
+    if (delgroup){
+      const gid = delgroup.getAttribute('data-delgroup');
+      if (!confirm('このPCSグループを削除しますか？含まれる測定データも削除されます。')) return;
+      state.insulationGroups = state.insulationGroups.filter(g=>g.id!==gid);
+      markDirty(); renderInsulationGroups();
+      return;
+    }
+    const addrow = e.target.closest('[data-addrow]');
+    if (addrow){
+      const gid = addrow.getAttribute('data-addrow');
+      const g = state.insulationGroups.find(x=>x.id===gid);
+      if (g){ g.rows.push(newInsulationRow(null, String(g.rows.length+1))); markDirty(); renderInsulationGroups(); }
+    }
+  });
+  document.getElementById('addInsulationGroup').addEventListener('click', ()=>{
+    state.insulationGroups.push(newInsulationGroup('PCS'+(state.insulationGroups.length+1)));
+    markDirty(); renderInsulationGroups();
+  });
+
+  // ================= 絶縁抵抗測定（交流） =================
+  function calcInsulationAcRow(row){
+    const criterion = parseFloat(row.criterion), measured = parseFloat(row.measured);
+    let judge = 'na';
+    if (isFinite(criterion) && isFinite(measured)) judge = measured >= criterion ? 'ok' : 'ng';
+    return {judge};
+  }
+  function renderInsulationAcRows(){
+    const tbody = document.getElementById('tbodyInsulationAc');
+    tbody.innerHTML = '';
+    document.getElementById('emptyInsulationAc').style.display = state.insulationAcRows.length ? 'none' : 'block';
+    state.insulationAcRows.forEach((row, idx)=>{
+      const {judge} = calcInsulationAcRow(row);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="num-col">${idx+1}</td>
+        <td><input class="cell-input text" data-id="${row.id}" data-f="location" value="${esc(row.location)}" placeholder="例：分電盤1"></td>
+        <td>
+          <select class="cell-input" data-id="${row.id}" data-f="voltage">
+            ${['125V','250V','500V','1000V'].map(v=>`<option ${row.voltage===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td><input class="cell-input" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：1.0" inputmode="decimal"></td>
+        <td><input class="cell-input" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
+        <td id="judge-ac-${row.id}">${badge(judge)}</td>
+        <td><input class="cell-input note text" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
+        <td><button class="row-del" data-delrow="${row.id}" title="削除">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    updateInsulationAcSummary();
+  }
+  function updateInsulationAcSummary(){
+    let ok=0, ng=0, na=0;
+    state.insulationAcRows.forEach(r=>{ const j = calcInsulationAcRow(r).judge; if (j==='ok') ok++; else if (j==='ng') ng++; else na++; });
+    const el = document.getElementById('summaryInsulationAc');
+    el.innerHTML = state.insulationAcRows.length ? `
+      <span class="chip">合計 <b>${state.insulationAcRows.length}</b> 件</span>
+      <span class="chip ok">OK <b>${ok}</b></span>
+      <span class="chip ng">NG <b>${ng}</b></span>
+      <span class="chip">未入力 <b>${na}</b></span>
+    ` : '';
+  }
+  const insulationAcTbody = document.getElementById('tbodyInsulationAc');
+  insulationAcTbody.addEventListener('input', e=>{
+    const t = e.target;
+    if (t.matches('[data-f]')){
+      const rid = t.getAttribute('data-id'), f = t.getAttribute('data-f');
+      const row = state.insulationAcRows.find(r=>r.id===rid);
+      if (!row) return;
+      row[f] = t.value;
+      markDirty();
+      const {judge} = calcInsulationAcRow(row);
+      const j = document.getElementById('judge-ac-'+rid); if (j) j.innerHTML = badge(judge);
+      updateInsulationAcSummary();
+    }
+  });
+  insulationAcTbody.addEventListener('click', e=>{
+    const delrow = e.target.closest('[data-delrow]');
+    if (delrow){
+      const rid = delrow.getAttribute('data-delrow');
+      state.insulationAcRows = state.insulationAcRows.filter(r=>r.id!==rid);
+      markDirty(); renderInsulationAcRows();
+    }
+  });
+  document.getElementById('addInsulationAcRow').addEventListener('click', ()=>{
+    state.insulationAcRows.push(newInsulationAcRow(state.insulationAcRows.length+1));
+    markDirty(); renderInsulationAcRows();
+  });
+
+  // ================= 接地抵抗測定 =================
+  function calcGroundingRow(row){
+    const criterion = parseFloat(row.criterion), measured = parseFloat(row.measured);
+    let judge = 'na';
+    if (isFinite(criterion) && isFinite(measured)) judge = measured <= criterion ? 'ok' : 'ng';
+    return {judge};
+  }
+  function renderGroundingRows(){
+    const tbody = document.getElementById('tbodyGrounding');
+    tbody.innerHTML = '';
+    document.getElementById('emptyGrounding').style.display = state.groundingRows.length ? 'none' : 'block';
+    state.groundingRows.forEach((row, idx)=>{
+      const {judge} = calcGroundingRow(row);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="num-col">${idx+1}</td>
+        <td>
+          <select class="cell-input" data-id="${row.id}" data-f="category">
+            ${['パネル','キュービクル','PCS','その他'].map(v=>`<option ${row.category===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td><input class="cell-input text" data-id="${row.id}" data-f="label" value="${esc(row.label)}" placeholder="例：PCS1 筐体"></td>
+        <td>
+          <select class="cell-input" data-id="${row.id}" data-f="electrodeType">
+            ${['A種','B種','C種','D種'].map(v=>`<option ${row.electrodeType===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </td>
+        <td><input class="cell-input" data-id="${row.id}" data-f="criterion" value="${esc(row.criterion)}" placeholder="例：100" inputmode="decimal"></td>
+        <td><input class="cell-input" data-id="${row.id}" data-f="measured" value="${esc(row.measured)}" placeholder="測定値" inputmode="decimal"></td>
+        <td id="judge-g-${row.id}">${badge(judge)}</td>
+        <td><input class="cell-input note text" data-id="${row.id}" data-f="note" value="${esc(row.note)}" placeholder="備考"></td>
+        <td><button class="row-del" data-delrow="${row.id}" title="削除">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    updateGroundingSummary();
+  }
+  function updateGroundingSummary(){
+    let ok=0, ng=0, na=0;
+    state.groundingRows.forEach(r=>{ const j = calcGroundingRow(r).judge; if (j==='ok') ok++; else if (j==='ng') ng++; else na++; });
+    const el = document.getElementById('summaryGrounding');
+    el.innerHTML = state.groundingRows.length ? `
+      <span class="chip">合計 <b>${state.groundingRows.length}</b> 件</span>
+      <span class="chip ok">OK <b>${ok}</b></span>
+      <span class="chip ng">NG <b>${ng}</b></span>
+      <span class="chip">未入力 <b>${na}</b></span>
+    ` : '';
+  }
+  const groundingTbody = document.getElementById('tbodyGrounding');
+  groundingTbody.addEventListener('input', e=>{
+    const t = e.target;
+    if (t.matches('[data-f]')){
+      const rid = t.getAttribute('data-id'), f = t.getAttribute('data-f');
+      const row = state.groundingRows.find(r=>r.id===rid);
+      if (!row) return;
+      row[f] = t.value;
+      markDirty();
+      if (f === 'electrodeType'){
+        row.criterion = defaultGroundingCriterion(row.electrodeType);
+        renderGroundingRows();
+        return;
+      }
+      const {judge} = calcGroundingRow(row);
+      const j = document.getElementById('judge-g-'+rid); if (j) j.innerHTML = badge(judge);
+      updateGroundingSummary();
+    }
+  });
+  groundingTbody.addEventListener('click', e=>{
+    const delrow = e.target.closest('[data-delrow]');
+    if (delrow){
+      const rid = delrow.getAttribute('data-delrow');
+      state.groundingRows = state.groundingRows.filter(r=>r.id!==rid);
+      markDirty(); renderGroundingRows();
+    }
+  });
+  document.getElementById('addGroundingRow').addEventListener('click', ()=>{
+    state.groundingRows.push(newGroundingRow());
+    markDirty(); renderGroundingRows();
+  });
+
+  // ---------- new / save / list / delete ----------
+  document.getElementById('btnNew').addEventListener('click', ()=>{
+    if (document.getElementById('saveStatus').textContent === '未保存の変更があります') {
+      if (!confirm('未保存の変更があります。新規点検を開始しますか？')) return;
+    }
+    state = blankState();
+    loadInfoIntoForm();
+    renderVoltageGroups();
+    renderInsulationGroups();
+    renderInsulationAcRows();
+    renderGroundingRows();
+    document.getElementById('saveStatus').textContent = '';
+    toast('新規点検を開始しました');
+  });
+
+  document.getElementById('btnSave').addEventListener('click', saveCurrent);
+
+  async function saveCurrent(){
+    state.updatedAt = new Date().toISOString();
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    try {
+      const result = await window.storage.set('inspection:'+state.id, JSON.stringify(state), false);
+      if (!result) throw new Error('no result');
+      markSaved();
+      toast('端末に保存しました');
+    } catch(err){
+      console.error('save error', err);
+      toast('保存に失敗しました。もう一度お試しください。');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('btnDriveSave').addEventListener('click', saveToDrive);
+  function saveToDrive(){
+    if (!isGasConfigured()){
+      toast('Googleドライブが未設定です。Apps Scriptを準備してGAS_URLを設定してください');
+      return;
+    }
+    if (!currentUser){
+      toast('ログインしてから保存してください');
+      return;
+    }
+    state.updatedAt = new Date().toISOString();
+    const fname = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr()) + '_' + state.id + '.json';
+    toast('Googleドライブへ保存をリクエストしました…');
+    fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'save', userName: currentUser, fileName: fname, jsonContent: JSON.stringify(state)})
+    }).then(()=>{
+      markSaved();
+      toast('Googleドライブに保存しました（' + currentUser + ' / ' + fname + '）');
+    }).catch(err=>{
+      console.error('drive save error', err);
+      toast('Googleドライブへの保存に失敗しました');
+    });
+  }
+
+  async function fetchList(){
+    try {
+      const listResult = await window.storage.list('inspection:', false);
+      const keys = (listResult && listResult.keys) || [];
+      const records = [];
+      for (const k of keys){
+        try {
+          const r = await window.storage.get(k, false);
+          if (r && r.value) records.push(JSON.parse(r.value));
+        } catch(e){ /* skip unreadable record */ }
+      }
+      records.sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||''));
+      return records;
+    } catch(err){
+      console.error('list error', err);
+      return null;
+    }
+  }
+
+  document.getElementById('btnList').addEventListener('click', openListModal);
+
+  function applyLoadedState(rec){
+    state = normalizeState(rec);
+    loadInfoIntoForm();
+    renderVoltageGroups();
+    renderInsulationGroups();
+    renderInsulationAcRows();
+    renderGroundingRows();
+    markSaved();
+  }
+
+  async function openListModal(){
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal">
+        <div class="modal-head">
+          <h3 class="display">履歴一覧</h3>
+          <button class="icon-btn" id="modalClose">✕</button>
+        </div>
+        <div class="hist-tabs">
+          <button class="hist-tab active" data-histtab="local">📱 端末</button>
+          <button class="hist-tab" data-histtab="drive">☁️ Googleドライブ</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <div class="empty-note">読み込み中…</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', e=>{ if(e.target===backdrop) backdrop.remove(); });
+    document.getElementById('modalClose').addEventListener('click', ()=>backdrop.remove());
+    backdrop.querySelectorAll('.hist-tab').forEach(tab=>{
+      tab.addEventListener('click', ()=>{
+        backdrop.querySelectorAll('.hist-tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const which = tab.getAttribute('data-histtab');
+        if (which === 'local') renderLocalHistory(backdrop);
+        else renderDriveHistory(backdrop, currentUser);
+      });
+    });
+
+    await renderLocalHistory(backdrop);
+  }
+
+  async function renderLocalHistory(backdrop){
+    const body = backdrop.querySelector('#modalBody');
+    body.innerHTML = '<div class="empty-note">読み込み中…</div>';
+    const records = await fetchList();
+    if (records === null){
+      body.innerHTML = '<div class="empty-note">一覧の取得に失敗しました。</div>';
+      return;
+    }
+    if (records.length === 0){
+      body.innerHTML = '<div class="empty-note">端末に保存された点検記録はまだありません。</div>';
+      return;
+    }
+    listCache = records;
+    body.innerHTML = records.map(r=>{
+      const vCount = (r.voltageGroups||[]).reduce((s,g)=>s+g.rows.length,0);
+      const iCount = (r.insulationGroups||[]).reduce((s,g)=>s+g.rows.length,0);
+      const acCount = (r.insulationAcRows||[]).length;
+      const gCount = (r.groundingRows||[]).length;
+      return `
+      <div class="rec-item">
+        <div class="rec-main" data-load="${r.id}">
+          <div class="plant">${esc(r.info.plant) || '（発電所名未入力）'}</div>
+          <div class="meta">${esc(r.info.date) || '日付未設定'} ・ ${esc(r.info.inspector) || '点検者未設定'} ・ 開放電圧${vCount} / 絶縁抵抗(直流)${iCount} / 絶縁抵抗(交流)${acCount} / 接地${gCount}</div>
+        </div>
+        <div class="rec-actions">
+          <button class="icon-btn" data-load="${r.id}" title="呼び出して編集">呼出し</button>
+          <button class="icon-btn" data-delrec="${r.id}" title="削除">🗑</button>
+        </div>
+      </div>
+    `;}).join('');
+    body.querySelectorAll('[data-load]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const rec = listCache.find(x=>x.id===el.getAttribute('data-load'));
+        if (rec){
+          applyLoadedState(rec);
+          backdrop.remove();
+          toast('点検記録を呼び出しました。修正して再保存できます');
+        }
+      });
+    });
+    body.querySelectorAll('[data-delrec]').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        const id = el.getAttribute('data-delrec');
+        if (!confirm('この点検記録を削除しますか？元に戻せません。')) return;
+        try {
+          await window.storage.delete('inspection:'+id, false);
+          toast('削除しました');
+          renderLocalHistory(backdrop);
+        } catch(err){
+          console.error('delete error', err);
+          toast('削除に失敗しました');
+        }
+      });
+    });
+  }
+
+  async function renderDriveHistory(backdrop, targetUser){
+    const body = backdrop.querySelector('#modalBody');
+    if (!isGasConfigured()){
+      body.innerHTML = '<div class="empty-note">Googleドライブが未設定です。Apps Scriptをデプロイし、アプリのGAS_URLを設定してください。</div>';
+      return;
+    }
+    const viewUser = targetUser || currentUser || '';
+    body.innerHTML = `
+      <div class="hist-user-row">
+        <span style="font-size:11.5px;color:var(--ink-soft);white-space:nowrap;">表示するユーザー</span>
+        <input type="text" id="driveTargetUser" value="${esc(viewUser)}" placeholder="氏名">
+        <button class="btn" id="driveTargetGo" style="padding:6px 12px;font-size:11.5px;">表示</button>
+      </div>
+      <div id="driveListArea"><div class="empty-note">読み込み中…</div></div>
+    `;
+    backdrop.querySelector('#driveTargetGo').addEventListener('click', ()=>{
+      const v = backdrop.querySelector('#driveTargetUser').value.trim();
+      renderDriveHistory(backdrop, v);
+    });
+    if (!viewUser){
+      backdrop.querySelector('#driveListArea').innerHTML = '<div class="empty-note">ユーザー名を入力して「表示」を押してください。</div>';
+      return;
+    }
+    const listArea = backdrop.querySelector('#driveListArea');
+    try{
+      const res = await fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||viewUser) + '&targetUser=' + encodeURIComponent(viewUser));
+      const data = await res.json();
+      if (!data.ok){
+        listArea.innerHTML = '<div class="empty-note">取得に失敗しました：' + esc(data.message||'') + '</div>';
+        return;
+      }
+      const files = data.files || [];
+      if (!files.length){
+        listArea.innerHTML = '<div class="empty-note">「' + esc(viewUser) + '」のGoogleドライブにはまだ記録がありません。</div>';
+        return;
+      }
+      listArea.innerHTML = files.map(f=>{
+        const dt = f.updated ? new Date(f.updated).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        return `
+        <div class="rec-item">
+          <div class="rec-main" data-driveload="${f.id}">
+            <div class="plant">${esc(f.name)}</div>
+            <div class="meta">${dt}</div>
+          </div>
+          <div class="rec-actions">
+            <button class="icon-btn" data-driveload="${f.id}" title="呼び出して編集">呼出し</button>
+            <button class="icon-btn" data-drivedel="${f.id}" title="削除">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+      listArea.querySelectorAll('[data-driveload]').forEach(el=>{
+        el.addEventListener('click', async ()=>{
+          const fid = el.getAttribute('data-driveload');
+          toast('読み込み中…');
+          try{
+            const r = await fetch(GAS_URL + '?action=getFile&fileId=' + encodeURIComponent(fid));
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.message||'read failed');
+            const parsed = JSON.parse(d.content);
+            applyLoadedState(parsed);
+            backdrop.remove();
+            toast('Googleドライブから読み込みました。修正して再保存できます');
+          } catch(err){
+            console.error('drive load error', err);
+            toast('読み込みに失敗しました');
+          }
+        });
+      });
+      listArea.querySelectorAll('[data-drivedel]').forEach(el=>{
+        el.addEventListener('click', async ()=>{
+          const fid = el.getAttribute('data-drivedel');
+          if (!confirm('この記録をGoogleドライブから削除しますか？元に戻せません。')) return;
+          try{
+            const r = await fetch(GAS_URL + '?action=deleteFile&fileId=' + encodeURIComponent(fid));
+            const d = await r.json();
+            if (d.ok){ toast('削除しました'); renderDriveHistory(backdrop, viewUser); }
+            else { toast('削除に失敗しました：' + (d.message||'')); }
+          } catch(err){
+            console.error('drive delete error', err);
+            toast('削除に失敗しました');
+          }
+        });
+      });
+    } catch(err){
+      console.error('drive history error', err);
+      listArea.innerHTML = '<div class="empty-note">Googleドライブへの接続に失敗しました。</div>';
+    }
+  }
+
+  // ---------- CSV + バックアップ 書き出し（1クリックで両方） ----------
+  function buildCsvContent(){
+    const lines = [];
+    lines.push('太陽光発電所点検記録');
+    lines.push(`発電所名,${csvEsc(state.info.plant)}`);
+    lines.push(`点検日,${csvEsc(state.info.date)}`);
+    lines.push(`点検者,${csvEsc(state.info.inspector)}`);
+    lines.push(`天候,${csvEsc(state.info.weather)}`);
+    lines.push(`気温,${csvEsc(state.info.temp)}`);
+    lines.push(`湿度,${csvEsc(state.info.humidity)}`);
+    lines.push('');
+    lines.push('【使用測定器】');
+    lines.push('区分,型式・名称,製造年,製造番号');
+    lines.push(['開放電圧測定器', state.info.devV.name, state.info.devV.year, state.info.devV.serial].map(csvEsc).join(','));
+    lines.push(['絶縁抵抗測定器', state.info.devR.name, state.info.devR.year, state.info.devR.serial].map(csvEsc).join(','));
+    lines.push('');
+    lines.push('【開放電圧測定】');
+    lines.push('PCS,No,ストリング名,公称Voc(V),直列枚数,開放電圧(V),入力方式,測定値(V),差異(%),判定,備考');
+    state.voltageGroups.forEach(g=>{
+      g.rows.forEach((r,i)=>{
+        const {diff, judge} = calcVoltageRow(r);
+        lines.push([g.pcsName, i+1, r.name, r.voc, r.count, r.ocv, r.autoOcv?'自動':'手入力', r.measured, diff!==null?diff.toFixed(1):'', judge==='ok'?'OK':judge==='ng'?'NG':'', r.note].map(csvEsc).join(','));
+      });
+    });
+    lines.push('');
+    lines.push('【絶縁抵抗測定（直流）】');
+    lines.push('PCS,No,測定箇所,試験電圧,判定基準(MΩ),P側測定値(MΩ),P側判定,N側測定値(MΩ),N側判定,備考');
+    state.insulationGroups.forEach(g=>{
+      g.rows.forEach((r,i)=>{
+        const {judgeP, judgeN} = calcInsulationRow(r);
+        lines.push([g.pcsName, i+1, r.location, r.voltage, r.criterion, r.measuredP, judgeP==='ok'?'OK':judgeP==='ng'?'NG':'', r.measuredN, judgeN==='ok'?'OK':judgeN==='ng'?'NG':'', r.note].map(csvEsc).join(','));
+      });
+    });
+    lines.push('');
+    lines.push('【絶縁抵抗測定（交流）】');
+    lines.push('No,測定箇所,試験電圧,判定基準(MΩ),測定値(MΩ),判定,備考');
+    state.insulationAcRows.forEach((r,i)=>{
+      const {judge} = calcInsulationAcRow(r);
+      lines.push([i+1, r.location, r.voltage, r.criterion, r.measured, judge==='ok'?'OK':judge==='ng'?'NG':'', r.note].map(csvEsc).join(','));
+    });
+    lines.push('');
+    lines.push('【接地抵抗測定】');
+    lines.push('No,箇所種別,詳細名称,接地極種別,判定基準(Ω),測定値(Ω),判定,備考');
+    state.groundingRows.forEach((r,i)=>{
+      const {judge} = calcGroundingRow(r);
+      lines.push([i+1, r.category, r.label, r.electrodeType, r.criterion, r.measured, judge==='ok'?'OK':judge==='ng'?'NG':'', r.note].map(csvEsc).join(','));
+    });
+    return '\uFEFF' + lines.join('\r\n');
+  }
+  function csvEsc(v){
+    v = (v===undefined||v===null) ? '' : String(v);
+    if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  }
+  function downloadBlob(content, mime, folderName, fileName){
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // フォルダ名/ファイル名 の形で指定すると、ダウンロード先にサブフォルダが作られます（対応ブラウザのみ）
+    a.download = folderName + '/' + fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }
+
+  document.getElementById('btnExportBoth').addEventListener('click', ()=>{
+    const baseName = (state.info.plant || '点検記録') + '_' + (state.info.date || todayStr());
+    downloadBlob(buildCsvContent(), 'text/csv;charset=utf-8;', '入力値Excelでの編集用', baseName + '.csv');
+    downloadBlob(JSON.stringify(state, null, 2), 'application/json', 'バックアップ読み出し用', baseName + '.json');
+    toast('CSVとバックアップを書き出しました（フォルダ分けされます）');
+  });
+
+  document.getElementById('btnJsonImportTrigger').addEventListener('click', ()=>{
+    document.getElementById('jsonFileInput').click();
+  });
+  document.getElementById('jsonFileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!parsed || !parsed.info) throw new Error('invalid file');
+      applyLoadedState(parsed);
+      toast('バックアップを読み込みました');
+    } catch(err){
+      console.error('json import error', err);
+      toast('読み込みに失敗しました。ファイル形式をご確認ください。');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+  // ---------- auto weather fetch (Open-Meteo, no API key required) ----------
+  function waStatus(msg){ document.getElementById('waStatus').textContent = msg || ''; }
+
+  function weatherCodeToLabel(code){
+    if (code === 0) return '晴れ';
+    if (code === 1 || code === 2) return '晴れ時々曇り';
+    if (code === 3 || code === 45 || code === 48) return '曇り';
+    if ([51,53,55,56,57].includes(code)) return '小雨';
+    if ([61,63,65,66,67,80,81,82].includes(code)) return '雨';
+    if ([71,73,75,77,85,86].includes(code)) return '雪';
+    return 'その他';
+  }
+
+  async function applyWeatherFromCoords(lat, lon, placeLabel){
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('forecast fetch failed: ' + res.status);
+    const data = await res.json();
+    const cur = data.current;
+    if (!cur) throw new Error('no current data');
+    state.info.temp = String(Math.round(cur.temperature_2m * 10) / 10);
+    state.info.humidity = String(Math.round(cur.relative_humidity_2m));
+    state.info.weather = weatherCodeToLabel(cur.weather_code);
+    loadInfoIntoForm();
+    markDirty();
+    toast('気象データを反映しました' + (placeLabel ? '（' + placeLabel + '）' : ''));
+  }
+
+  document.getElementById('btnGeoWeather').addEventListener('click', ()=>{
+    if (!navigator.geolocation){
+      waStatus('この環境では位置情報を利用できません。地名から取得してください。');
+      return;
+    }
+    const btn = document.getElementById('btnGeoWeather');
+    btn.disabled = true;
+    waStatus('現在地を取得しています…');
+    navigator.geolocation.getCurrentPosition(async (pos)=>{
+      try{
+        await applyWeatherFromCoords(pos.coords.latitude, pos.coords.longitude, '現在地');
+        waStatus('');
+      } catch(err){
+        console.error('weather fetch error', err);
+        waStatus('気象データの取得に失敗しました。地名からの取得もお試しください。');
+      } finally {
+        btn.disabled = false;
+      }
+    }, (err)=>{
+      console.error('geolocation error', err);
+      waStatus('位置情報を取得できませんでした（許可が必要です）。地名から取得してください。');
+      btn.disabled = false;
+    }, {timeout:10000});
+  });
+
+  document.getElementById('btnPlaceWeather').addEventListener('click', async ()=>{
+    const place = document.getElementById('f_placeSearch').value.trim();
+    if (!place){ waStatus('地名を入力してください。'); return; }
+    const btn = document.getElementById('btnPlaceWeather');
+    btn.disabled = true;
+    waStatus('「' + place + '」を検索しています…');
+    try{
+      const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=ja&format=json`;
+      const geoRes = await fetch(geoUrl);
+      if (!geoRes.ok) throw new Error('geocoding failed: ' + geoRes.status);
+      const geoData = await geoRes.json();
+      const hit = geoData.results && geoData.results[0];
+      if (!hit) { waStatus('該当する地名が見つかりませんでした。'); return; }
+      const label = [hit.name, hit.admin1].filter(Boolean).join(' / ');
+      await applyWeatherFromCoords(hit.latitude, hit.longitude, label);
+      waStatus('');
+    } catch(err){
+      console.error('place weather error', err);
+      waStatus('気象データの取得に失敗しました。時間をおいて再度お試しください。');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- tools modal ----------
+  let swInterval = null, swStart = 0, swElapsed = 0, swRunning = false;
+  let cameraStream = null;
+  let angleActive = false;
+  let calcCur = '0', calcPrev = null, calcOp = null, calcResetNext = false;
+
+  document.getElementById('btnTools').addEventListener('click', ()=>{
+    document.getElementById('toolsBackdrop').style.display = 'flex';
+  });
+  document.getElementById('toolsClose').addEventListener('click', closeToolsModal);
+  document.getElementById('toolsBackdrop').addEventListener('click', e=>{
+    if (e.target.id === 'toolsBackdrop') closeToolsModal();
+  });
+  function closeToolsModal(){
+    document.getElementById('toolsBackdrop').style.display = 'none';
+    stopCamera();
+    if (angleActive){ window.removeEventListener('deviceorientation', handleOrientation); angleActive = false; }
+  }
+  document.querySelectorAll('.tool-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tool-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.getAttribute('data-tool');
+      document.querySelectorAll('.tool-pane').forEach(p=>p.style.display='none');
+      document.getElementById('pane-'+target).style.display = 'flex';
+      if (target !== 'camera') stopCamera();
+      if (target !== 'angle' && angleActive){ window.removeEventListener('deviceorientation', handleOrientation); angleActive = false; }
+    });
+  });
+
+  // --- ストップウォッチ ---
+  function swFormat(ms){
+    const cs = Math.floor((ms % 1000) / 10);
+    const totalSec = Math.floor(ms / 1000);
+    const s = totalSec % 60, m = Math.floor(totalSec / 60);
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cs).padStart(2,'0');
+  }
+  function swTick(){
+    const ms = swElapsed + (performance.now() - swStart);
+    document.getElementById('swDisplay').textContent = swFormat(ms);
+  }
+  document.getElementById('swStartStop').addEventListener('click', ()=>{
+    if (!swRunning){
+      swRunning = true; swStart = performance.now();
+      swInterval = setInterval(swTick, 47);
+      document.getElementById('swStartStop').textContent = '停止';
+    } else {
+      swRunning = false;
+      swElapsed += performance.now() - swStart;
+      clearInterval(swInterval);
+      document.getElementById('swStartStop').textContent = '開始';
+    }
+  });
+  document.getElementById('swReset').addEventListener('click', ()=>{
+    swRunning = false; clearInterval(swInterval); swElapsed = 0; swStart = 0;
+    document.getElementById('swDisplay').textContent = '00:00.00';
+    document.getElementById('swStartStop').textContent = '開始';
+    document.getElementById('swLaps').innerHTML = '';
+  });
+  document.getElementById('swLap').addEventListener('click', ()=>{
+    const ms = swElapsed + (swRunning ? performance.now() - swStart : 0);
+    const li = document.createElement('li');
+    li.textContent = swFormat(ms);
+    document.getElementById('swLaps').prepend(li);
+  });
+
+  // --- カメラ ---
+  async function startCamera(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      document.getElementById('camStatus').textContent = 'この環境ではカメラを利用できません。';
+      return;
+    }
+    try{
+      cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+      const video = document.getElementById('toolCameraVideo');
+      video.srcObject = cameraStream;
+      video.style.display = 'block';
+      document.getElementById('camPlaceholder').style.display = 'none';
+      document.getElementById('camStatus').textContent = '';
+    } catch(err){
+      console.error('camera error', err);
+      document.getElementById('camStatus').textContent = 'カメラを起動できませんでした。この表示環境ではカメラ権限がブロックされている場合があります。';
+    }
+  }
+  function stopCamera(){
+    if (cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; }
+    const video = document.getElementById('toolCameraVideo');
+    if (video){ video.srcObject = null; video.style.display = 'none'; }
+    const ph = document.getElementById('camPlaceholder');
+    if (ph) ph.style.display = 'block';
+  }
+  document.getElementById('camStart').addEventListener('click', startCamera);
+  document.getElementById('camStop').addEventListener('click', stopCamera);
+  document.getElementById('camShoot').addEventListener('click', ()=>{
+    const video = document.getElementById('toolCameraVideo');
+    if (!video.srcObject){ document.getElementById('camStatus').textContent = '先にカメラを起動してください。'; return; }
+    const canvas = document.getElementById('toolCameraCanvas');
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const img = document.getElementById('camPreviewImg');
+    img.src = dataUrl; img.style.display = 'block';
+    const dl = document.getElementById('camDownload');
+    dl.href = dataUrl; dl.download = '点検写真_' + Date.now() + '.jpg';
+    dl.style.display = 'inline-flex';
+  });
+
+  // --- 角度計 ---
+  function handleOrientation(e){
+    if (e.beta === null || e.gamma === null) return;
+    document.getElementById('angleBeta').textContent = e.beta.toFixed(1) + '°';
+    document.getElementById('angleGamma').textContent = e.gamma.toFixed(1) + '°';
+    const needle = document.getElementById('angleNeedle');
+    if (needle) needle.style.transform = 'rotate(' + (-e.gamma) + 'deg)';
+  }
+  document.getElementById('angleRequest').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('angleStatus');
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      try{
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted'){
+          window.addEventListener('deviceorientation', handleOrientation);
+          angleActive = true;
+          statusEl.textContent = '計測中です。端末を測定面に当ててください。';
+        } else {
+          statusEl.textContent = '許可されませんでした。設定から位置情報／モーションの許可をご確認ください。';
+        }
+      } catch(err){
+        console.error('orientation permission error', err);
+        statusEl.textContent = '権限リクエストに失敗しました。この環境では利用できない可能性があります。';
+      }
+    } else if ('DeviceOrientationEvent' in window) {
+      window.addEventListener('deviceorientation', handleOrientation);
+      angleActive = true;
+      statusEl.textContent = '計測中です。端末を測定面に当ててください。';
+    } else {
+      statusEl.textContent = 'この端末・環境では角度センサーを利用できません。';
+    }
+  });
+
+  // --- 電卓 ---
+  function calcRender(){ document.getElementById('calcDisplay').textContent = calcCur; }
+  function calcInputDigit(d){
+    if (calcResetNext){ calcCur = (d==='.') ? '0.' : d; calcResetNext = false; }
+    else if (calcCur === '0' && d !== '.'){ calcCur = d; }
+    else if (d === '.' && calcCur.includes('.')){ /* ignore duplicate decimal point */ }
+    else { calcCur += d; }
+    calcRender();
+  }
+  function calcCompute(){
+    if (calcOp === null || calcPrev === null) return;
+    const cur = parseFloat(calcCur);
+    let result = cur;
+    if (calcOp === '+') result = calcPrev + cur;
+    else if (calcOp === '-') result = calcPrev - cur;
+    else if (calcOp === '×') result = calcPrev * cur;
+    else if (calcOp === '÷') result = (cur === 0) ? NaN : calcPrev / cur;
+    calcCur = isFinite(result) ? String(Math.round(result * 1e6) / 1e6) : 'エラー';
+    calcOp = null; calcPrev = null; calcResetNext = true;
+    calcRender();
+  }
+  function calcApplyOp(op){
+    if (calcOp && !calcResetNext) calcCompute();
+    calcPrev = parseFloat(calcCur);
+    calcOp = op;
+    calcResetNext = true;
+  }
+  document.querySelectorAll('.calc-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const v = btn.getAttribute('data-calc');
+      if (v === 'C'){ calcCur = '0'; calcPrev = null; calcOp = null; calcResetNext = false; calcRender(); return; }
+      if (v === '='){ calcCompute(); return; }
+      if (v === '+' || v === '-' || v === '×' || v === '÷'){ calcApplyOp(v); return; }
+      calcInputDigit(v);
+    });
+  });
+
+  // ---------- init ----------
+  loadInfoIntoForm();
+  renderVoltageGroups();
+  renderInsulationGroups();
+  renderInsulationAcRows();
+  renderGroundingRows();
+  updateDriveStatusUI();
+  const savedUser = loadUserSession();
+  if (savedUser) loginSuccess(savedUser);
+})();
+</script>
+
+</body>
+</html>
