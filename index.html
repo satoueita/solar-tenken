@@ -744,6 +744,11 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzkRehAP1Lv035AkiBNgVjUzmZl5Ntzwd5iB3PPyD-4HZlduqnsI8aiAIV3codW0EMP/exec';
   function isGasConfigured(){ return GAS_URL.indexOf('YOUR_SCRIPT_ID') < 0; }
 
+  // ページを開いた時点で、裏側で先に名簿キャッシュを温めておく（ログイン操作を待たない）
+  if (isGasConfigured()){
+    fetch(GAS_URL + '?action=warmup').catch(()=>{});
+  }
+
   let currentUser = '';
 
   function saveUserSession(name, company){
@@ -1896,20 +1901,19 @@
       renderDriveHistory(backdrop, selectEl.value);
     });
 
-    // 自分と同じ会社のユーザーだけをプルダウンに表示（他社のユーザーはサーバー側で除外済み）
-    try{
-      const ulRes = await fetch(GAS_URL + '?action=getUserList&user=' + encodeURIComponent(currentUser) + '&company=' + encodeURIComponent(currentUserCompany));
-      const ulData = await ulRes.json();
-      const users = (ulData.ok && ulData.users) ? ulData.users : [];
-      if (!users.length){
-        selectEl.innerHTML = viewUser ? `<option value="${esc(viewUser)}" selected>${esc(viewUser)}</option>` : '<option value="">（同じ会社のユーザーが見つかりません）</option>';
-      } else {
-        selectEl.innerHTML = users.map(u=>`<option value="${esc(u.name)}" ${u.name===viewUser?'selected':''}>${esc(u.name)}</option>`).join('');
-        if (!viewUser) selectEl.selectedIndex = 0;
-      }
-    } catch(err){
-      console.error('getUserList error', err);
-      selectEl.innerHTML = viewUser ? `<option value="${esc(viewUser)}" selected>${esc(viewUser)}</option>` : '<option value="">（取得失敗）</option>';
+    // ユーザー一覧と履歴を同時に取得する（片方の完了を待たない）
+    const ulPromise = fetch(GAS_URL + '?action=getUserList&user=' + encodeURIComponent(currentUser) + '&company=' + encodeURIComponent(currentUserCompany))
+      .then(r=>r.json()).catch(err=>{ console.error('getUserList error', err); return null; });
+    const histPromise = fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||viewUser) + '&company=' + encodeURIComponent(currentUserCompany) + '&targetUser=' + encodeURIComponent(viewUser))
+      .then(r=>r.json()).catch(err=>{ console.error('getHistory error', err); return null; });
+
+    const ulData = await ulPromise;
+    const users = (ulData && ulData.ok && ulData.users) ? ulData.users : [];
+    if (!users.length){
+      selectEl.innerHTML = viewUser ? `<option value="${esc(viewUser)}" selected>${esc(viewUser)}</option>` : '<option value="">（同じ会社のユーザーが見つかりません）</option>';
+    } else {
+      selectEl.innerHTML = users.map(u=>`<option value="${esc(u.name)}" ${u.name===viewUser?'selected':''}>${esc(u.name)}</option>`).join('');
+      if (!viewUser) selectEl.selectedIndex = 0;
     }
 
     const effectiveUser = selectEl.value || viewUser;
@@ -1918,11 +1922,13 @@
       return;
     }
     const listArea = backdrop.querySelector('#driveListArea');
+    // ドロップダウンの選択結果が、先読みしていたユーザーと違う場合だけ取り直す
+    const data = (effectiveUser === viewUser)
+      ? await histPromise
+      : await fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||effectiveUser) + '&company=' + encodeURIComponent(currentUserCompany) + '&targetUser=' + encodeURIComponent(effectiveUser)).then(r=>r.json()).catch(err=>{ console.error('getHistory error', err); return null; });
     try{
-      const res = await fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||effectiveUser) + '&company=' + encodeURIComponent(currentUserCompany) + '&targetUser=' + encodeURIComponent(effectiveUser));
-      const data = await res.json();
-      if (!data.ok){
-        listArea.innerHTML = '<div class="empty-note">取得に失敗しました：' + esc(data.message||'') + '</div>';
+      if (!data || !data.ok){
+        listArea.innerHTML = '<div class="empty-note">取得に失敗しました：' + esc((data && data.message)||'') + '</div>';
         return;
       }
       const files = data.files || [];
