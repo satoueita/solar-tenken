@@ -428,18 +428,14 @@
   <div class="login-box">
     <div class="login-logo">太陽光発電所 点検記録<br><span style="color:var(--amber);font-weight:700;">匡電気管理事務株式会社</span><br><span>氏名を入力してログインしてください</span></div>
     <input class="login-input" id="loginUserInput" type="text" placeholder="氏名を入力" autocomplete="name">
+    <input class="login-input" id="loginPasswordInput" type="password" placeholder="パスワード（会社により必要です）" autocomplete="current-password">
     <button class="login-btn" id="loginBtn">ログイン</button>
     <div class="login-err" id="loginErr"></div>
     <div class="login-company-picker" id="loginCompanyPicker" style="display:none;">
       <div class="login-company-picker-label">同じ氏名が複数の会社に登録されています。<br>どちらの会社としてログインしますか？</div>
       <div id="loginCompanyButtons"></div>
     </div>
-    <div class="login-password-area" id="loginPasswordArea" style="display:none;">
-      <div class="login-company-picker-label" id="loginPasswordLabel">会社のパスワードを入力してください</div>
-      <input class="login-input" id="loginPasswordInput" type="password" placeholder="パスワード" autocomplete="current-password">
-      <button class="login-btn" id="loginPasswordBtn">確認してログイン</button>
-    </div>
-    <div class="login-note">※ 氏名の入力のみです。Googleアカウントへのログインは行いません。<br>保存データの区分けと、Googleドライブ保存先フォルダの識別に使用します。</div>
+    <div class="login-note">※ 氏名の入力のみです。Googleアカウントへのログインは行いません。<br>保存データの区分けと、Googleドライブ保存先フォルダの識別に使用します。<br>パスワードは会社によって必要な場合のみ設定されています（不要な場合は空欄でログインできます）。</div>
   </div>
 </div>
 
@@ -744,11 +740,6 @@
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzkRehAP1Lv035AkiBNgVjUzmZl5Ntzwd5iB3PPyD-4HZlduqnsI8aiAIV3codW0EMP/exec';
   function isGasConfigured(){ return GAS_URL.indexOf('YOUR_SCRIPT_ID') < 0; }
 
-  // ページを開いた時点で、裏側で先に名簿キャッシュを温めておく（ログイン操作を待たない）
-  if (isGasConfigured()){
-    fetch(GAS_URL + '?action=warmup').catch(()=>{});
-  }
-
   let currentUser = '';
 
   function saveUserSession(name, company){
@@ -779,48 +770,42 @@
 
   let currentUserCompany = '';
   let pendingLoginName = '';
-  let pendingLoginCompany = '';
+  let pendingLoginPassword = '';
 
   function doLogin(){
     const nameInput = document.getElementById('loginUserInput');
+    const passwordInput = document.getElementById('loginPasswordInput');
     const errEl = document.getElementById('loginErr');
     const name = nameInput.value.trim();
+    const password = passwordInput.value;
     if (!name){ errEl.textContent = '氏名を入力してください'; return; }
     errEl.textContent = '確認中…';
     hideCompanyPicker();
-    hidePasswordArea();
     if (!isGasConfigured()){
       errEl.textContent = '';
       setTimeout(()=>loginSuccess(name, ''), 250);
       return;
     }
-    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name))
+    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name) + '&password=' + encodeURIComponent(password))
       .then(r=>r.json())
-      .then(j=> handleAuthResponse(name, j))
+      .then(j=> handleAuthResponse(name, password, j))
       .catch(err=>{
         console.warn('auth error', err);
         errEl.textContent = '通信エラーのため、そのままログインします…';
         setTimeout(()=>loginSuccess(name, ''), 800);
       });
   }
-  function handleAuthResponse(name, j){
+  function handleAuthResponse(name, password, j){
     const errEl = document.getElementById('loginErr');
-    if (!j.ok){ errEl.textContent = j.message || 'このユーザー名は許可されていません'; return; }
+    if (!j.ok){ errEl.textContent = j.message || 'ログインできませんでした'; return; }
     if (j.needsCompanySelection){
       pendingLoginName = name;
+      pendingLoginPassword = password;
       errEl.textContent = '';
       showCompanyPicker(name, j.companies || []);
       return;
     }
-    if (j.needsPassword){
-      pendingLoginName = name;
-      pendingLoginCompany = j.company || '';
-      errEl.textContent = '';
-      showPasswordArea(pendingLoginCompany);
-      return;
-    }
     hideCompanyPicker();
-    hidePasswordArea();
     loginSuccess(name, j.company || '');
   }
   function showCompanyPicker(name, companies){
@@ -842,43 +827,14 @@
   function selectLoginCompany(name, company){
     const errEl = document.getElementById('loginErr');
     errEl.textContent = '確認中…';
-    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name) + '&company=' + encodeURIComponent(company))
+    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name) + '&company=' + encodeURIComponent(company) + '&password=' + encodeURIComponent(pendingLoginPassword))
       .then(r=>r.json())
       .then(j=>{
-        hideCompanyPicker();
-        handleAuthResponse(name, j);
+        if (j.ok){ hideCompanyPicker(); loginSuccess(name, j.company || company); }
+        else { errEl.textContent = j.message || 'ログインできませんでした'; }
       })
       .catch(err=>{
         console.warn('company select error', err);
-        errEl.textContent = '通信エラーが発生しました。もう一度お試しください。';
-      });
-  }
-  function showPasswordArea(company){
-    document.getElementById('loginPasswordLabel').textContent = '「' + company + '」のパスワードを入力してください';
-    document.getElementById('loginPasswordInput').value = '';
-    document.getElementById('loginPasswordArea').style.display = 'block';
-    document.getElementById('loginPasswordInput').focus();
-  }
-  function hidePasswordArea(){
-    document.getElementById('loginPasswordArea').style.display = 'none';
-  }
-  function submitLoginPassword(){
-    const errEl = document.getElementById('loginErr');
-    const password = document.getElementById('loginPasswordInput').value;
-    if (!password){ errEl.textContent = 'パスワードを入力してください'; return; }
-    errEl.textContent = '確認中…';
-    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(pendingLoginName) + '&company=' + encodeURIComponent(pendingLoginCompany) + '&password=' + encodeURIComponent(password))
-      .then(r=>r.json())
-      .then(j=>{
-        if (j.ok && !j.needsPassword){
-          hidePasswordArea();
-          loginSuccess(pendingLoginName, j.company || pendingLoginCompany);
-        } else {
-          errEl.textContent = j.message || 'パスワードが違います';
-        }
-      })
-      .catch(err=>{
-        console.warn('password submit error', err);
         errEl.textContent = '通信エラーが発生しました。もう一度お試しください。';
       });
   }
@@ -900,8 +856,7 @@
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('loginUserInput').addEventListener('keydown', e=>{ if (e.key==='Enter') doLogin(); });
-  document.getElementById('loginPasswordBtn').addEventListener('click', submitLoginPassword);
-  document.getElementById('loginPasswordInput').addEventListener('keydown', e=>{ if (e.key==='Enter') submitLoginPassword(); });
+  document.getElementById('loginPasswordInput').addEventListener('keydown', e=>{ if (e.key==='Enter') doLogin(); });
   document.getElementById('logoutBtn').addEventListener('click', doLogout);
 
 
