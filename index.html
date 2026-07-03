@@ -391,6 +391,15 @@
   .login-btn:hover{background:#255f7a;}
   .login-err{font-size:11.5px;color:var(--ng);min-height:16px;margin-top:8px;}
   .login-note{font-size:10.5px;color:var(--ink-soft);margin-top:14px;line-height:1.6;}
+  .login-company-picker{margin-top:12px;}
+  .login-company-picker-label{font-size:12px;color:var(--ink);line-height:1.6;margin-bottom:10px;}
+  .login-company-btn{
+    display:block;width:100%;padding:11px 14px;margin-bottom:8px;
+    border:1px solid var(--blue);border-radius:8px;background:var(--blue-soft);
+    color:var(--blue);font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+  }
+  .login-company-btn:hover{background:var(--blue);color:#fff;}
+  .login-password-area{margin-top:12px;}
 
   .user-bar{
     background:var(--blue-soft);border-bottom:1px solid #b7d3dd;padding:7px 20px;
@@ -421,6 +430,15 @@
     <input class="login-input" id="loginUserInput" type="text" placeholder="氏名を入力" autocomplete="name">
     <button class="login-btn" id="loginBtn">ログイン</button>
     <div class="login-err" id="loginErr"></div>
+    <div class="login-company-picker" id="loginCompanyPicker" style="display:none;">
+      <div class="login-company-picker-label">同じ氏名が複数の会社に登録されています。<br>どちらの会社としてログインしますか？</div>
+      <div id="loginCompanyButtons"></div>
+    </div>
+    <div class="login-password-area" id="loginPasswordArea" style="display:none;">
+      <div class="login-company-picker-label" id="loginPasswordLabel">会社のパスワードを入力してください</div>
+      <input class="login-input" id="loginPasswordInput" type="password" placeholder="パスワード" autocomplete="current-password">
+      <button class="login-btn" id="loginPasswordBtn">確認してログイン</button>
+    </div>
     <div class="login-note">※ 氏名の入力のみです。Googleアカウントへのログインは行いません。<br>保存データの区分けと、Googleドライブ保存先フォルダの識別に使用します。</div>
   </div>
 </div>
@@ -728,9 +746,23 @@
 
   let currentUser = '';
 
-  function saveUserSession(name){ try{ sessionStorage.setItem('inspection_user', name); }catch(e){} }
-  function loadUserSession(){ try{ return sessionStorage.getItem('inspection_user') || ''; }catch(e){ return ''; } }
-  function clearUserSession(){ try{ sessionStorage.removeItem('inspection_user'); }catch(e){} }
+  function saveUserSession(name, company){
+    try{
+      sessionStorage.setItem('inspection_user', name);
+      sessionStorage.setItem('inspection_company', company || '');
+    }catch(e){}
+  }
+  function loadUserSession(){
+    try{
+      return { name: sessionStorage.getItem('inspection_user') || '', company: sessionStorage.getItem('inspection_company') || '' };
+    }catch(e){ return { name:'', company:'' }; }
+  }
+  function clearUserSession(){
+    try{
+      sessionStorage.removeItem('inspection_user');
+      sessionStorage.removeItem('inspection_company');
+    }catch(e){}
+  }
 
   function updateDriveStatusUI(){
     const dot = document.getElementById('driveDot');
@@ -741,6 +773,8 @@
   }
 
   let currentUserCompany = '';
+  let pendingLoginName = '';
+  let pendingLoginCompany = '';
 
   function doLogin(){
     const nameInput = document.getElementById('loginUserInput');
@@ -748,6 +782,8 @@
     const name = nameInput.value.trim();
     if (!name){ errEl.textContent = '氏名を入力してください'; return; }
     errEl.textContent = '確認中…';
+    hideCompanyPicker();
+    hidePasswordArea();
     if (!isGasConfigured()){
       errEl.textContent = '';
       setTimeout(()=>loginSuccess(name, ''), 250);
@@ -755,20 +791,96 @@
     }
     fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name))
       .then(r=>r.json())
-      .then(j=>{
-        if (j.ok) loginSuccess(name, j.company || '');
-        else errEl.textContent = 'このユーザー名は許可されていません';
-      })
+      .then(j=> handleAuthResponse(name, j))
       .catch(err=>{
         console.warn('auth error', err);
         errEl.textContent = '通信エラーのため、そのままログインします…';
         setTimeout(()=>loginSuccess(name, ''), 800);
       });
   }
+  function handleAuthResponse(name, j){
+    const errEl = document.getElementById('loginErr');
+    if (!j.ok){ errEl.textContent = j.message || 'このユーザー名は許可されていません'; return; }
+    if (j.needsCompanySelection){
+      pendingLoginName = name;
+      errEl.textContent = '';
+      showCompanyPicker(name, j.companies || []);
+      return;
+    }
+    if (j.needsPassword){
+      pendingLoginName = name;
+      pendingLoginCompany = j.company || '';
+      errEl.textContent = '';
+      showPasswordArea(pendingLoginCompany);
+      return;
+    }
+    hideCompanyPicker();
+    hidePasswordArea();
+    loginSuccess(name, j.company || '');
+  }
+  function showCompanyPicker(name, companies){
+    const picker = document.getElementById('loginCompanyPicker');
+    const btnWrap = document.getElementById('loginCompanyButtons');
+    btnWrap.innerHTML = companies.map(c=>`<button type="button" class="login-company-btn" data-company="${esc(c)}">${esc(c)}</button>`).join('');
+    btnWrap.querySelectorAll('.login-company-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const company = btn.getAttribute('data-company');
+        selectLoginCompany(name, company);
+      });
+    });
+    picker.style.display = 'block';
+  }
+  function hideCompanyPicker(){
+    document.getElementById('loginCompanyPicker').style.display = 'none';
+    document.getElementById('loginCompanyButtons').innerHTML = '';
+  }
+  function selectLoginCompany(name, company){
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = '確認中…';
+    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(name) + '&company=' + encodeURIComponent(company))
+      .then(r=>r.json())
+      .then(j=>{
+        hideCompanyPicker();
+        handleAuthResponse(name, j);
+      })
+      .catch(err=>{
+        console.warn('company select error', err);
+        errEl.textContent = '通信エラーが発生しました。もう一度お試しください。';
+      });
+  }
+  function showPasswordArea(company){
+    document.getElementById('loginPasswordLabel').textContent = '「' + company + '」のパスワードを入力してください';
+    document.getElementById('loginPasswordInput').value = '';
+    document.getElementById('loginPasswordArea').style.display = 'block';
+    document.getElementById('loginPasswordInput').focus();
+  }
+  function hidePasswordArea(){
+    document.getElementById('loginPasswordArea').style.display = 'none';
+  }
+  function submitLoginPassword(){
+    const errEl = document.getElementById('loginErr');
+    const password = document.getElementById('loginPasswordInput').value;
+    if (!password){ errEl.textContent = 'パスワードを入力してください'; return; }
+    errEl.textContent = '確認中…';
+    fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(pendingLoginName) + '&company=' + encodeURIComponent(pendingLoginCompany) + '&password=' + encodeURIComponent(password))
+      .then(r=>r.json())
+      .then(j=>{
+        if (j.ok && !j.needsPassword){
+          hidePasswordArea();
+          loginSuccess(pendingLoginName, j.company || pendingLoginCompany);
+        } else {
+          errEl.textContent = j.message || 'パスワードが違います';
+        }
+      })
+      .catch(err=>{
+        console.warn('password submit error', err);
+        errEl.textContent = '通信エラーが発生しました。もう一度お試しください。';
+      });
+  }
   function loginSuccess(name, company){
     currentUser = name;
     currentUserCompany = company || '';
-    saveUserSession(name);
+    saveUserSession(name, currentUserCompany);
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('userNameDisp').textContent = '👤 ' + name + (currentUserCompany ? '（' + currentUserCompany + '）' : '');
     updateDriveStatusUI();
@@ -783,6 +895,8 @@
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('loginUserInput').addEventListener('keydown', e=>{ if (e.key==='Enter') doLogin(); });
+  document.getElementById('loginPasswordBtn').addEventListener('click', submitLoginPassword);
+  document.getElementById('loginPasswordInput').addEventListener('keydown', e=>{ if (e.key==='Enter') submitLoginPassword(); });
   document.getElementById('logoutBtn').addEventListener('click', doLogout);
 
 
@@ -1705,6 +1819,7 @@
     const payload = {
       action: 'save',
       userName: currentUser,
+      company: currentUserCompany,
       files: [
         { fileName: baseName + '.json', fileType: 'json', content: JSON.stringify(state) },
         { fileName: baseName + '.csv', fileType: 'csv', content: buildCsvContent() }
@@ -1783,7 +1898,7 @@
 
     // 自分と同じ会社のユーザーだけをプルダウンに表示（他社のユーザーはサーバー側で除外済み）
     try{
-      const ulRes = await fetch(GAS_URL + '?action=getUserList&user=' + encodeURIComponent(currentUser));
+      const ulRes = await fetch(GAS_URL + '?action=getUserList&user=' + encodeURIComponent(currentUser) + '&company=' + encodeURIComponent(currentUserCompany));
       const ulData = await ulRes.json();
       const users = (ulData.ok && ulData.users) ? ulData.users : [];
       if (!users.length){
@@ -1804,7 +1919,7 @@
     }
     const listArea = backdrop.querySelector('#driveListArea');
     try{
-      const res = await fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||effectiveUser) + '&targetUser=' + encodeURIComponent(effectiveUser));
+      const res = await fetch(GAS_URL + '?action=getHistory&user=' + encodeURIComponent(currentUser||effectiveUser) + '&company=' + encodeURIComponent(currentUserCompany) + '&targetUser=' + encodeURIComponent(effectiveUser));
       const data = await res.json();
       if (!data.ok){
         listArea.innerHTML = '<div class="empty-note">取得に失敗しました：' + esc(data.message||'') + '</div>';
@@ -1834,7 +1949,7 @@
           const fid = el.getAttribute('data-driveload');
           toast('読み込み中…');
           try{
-            const r = await fetch(GAS_URL + '?action=getFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser));
+            const r = await fetch(GAS_URL + '?action=getFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser) + '&company=' + encodeURIComponent(currentUserCompany));
             const d = await r.json();
             if (!d.ok) throw new Error(d.message||'read failed');
             const parsed = JSON.parse(d.content);
@@ -1852,7 +1967,7 @@
           const fid = el.getAttribute('data-drivedel');
           if (!confirm('この記録をGoogleドライブから削除しますか？元に戻せません。')) return;
           try{
-            const r = await fetch(GAS_URL + '?action=deleteFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser));
+            const r = await fetch(GAS_URL + '?action=deleteFile&fileId=' + encodeURIComponent(fid) + '&user=' + encodeURIComponent(currentUser) + '&company=' + encodeURIComponent(currentUserCompany));
             const d = await r.json();
             if (d.ok){ toast('削除しました'); renderDriveHistory(backdrop, viewUser); }
             else { toast('削除に失敗しました：' + (d.message||'')); }
@@ -2145,7 +2260,7 @@
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({action:'savePhoto', userName: currentUser, fileName: fname, imageData: dataUrl})
+      body: JSON.stringify({action:'savePhoto', userName: currentUser, company: currentUserCompany, fileName: fname, imageData: dataUrl})
     }).then(()=>{
       toast('Googleドライブに保存しました（' + fname + '）');
     }).catch(err=>{
@@ -2309,16 +2424,10 @@
   renderInsulationAcRows();
   renderGroundingRows();
   updateDriveStatusUI();
-  const savedUser = loadUserSession();
-  if (savedUser){
-    if (isGasConfigured()){
-      fetch(GAS_URL + '?action=auth&user=' + encodeURIComponent(savedUser))
-        .then(r=>r.json())
-        .then(j=> loginSuccess(savedUser, j.company || ''))
-        .catch(()=> loginSuccess(savedUser, ''));
-    } else {
-      loginSuccess(savedUser, '');
-    }
+  const savedSession = loadUserSession();
+  if (savedSession.name){
+    // 一度ログイン済みのセッションはそのまま復元する（パスワードは初回ログイン時に確認済みのため再要求しない）
+    loginSuccess(savedSession.name, savedSession.company || '');
   }
 })();
 </script>
